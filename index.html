@@ -55,14 +55,6 @@
                     </div>
                 </div>
             </a>
-            <a href="#pom">
-                <div class="card">
-                    <img src="images/pom.PNG" alt="Graphics Programming" style="width:100%">
-                    <div class="container">
-                    <h4>Parallax Occlusion Mapping</h4>
-                    </div>
-                </div>
-            </a>
             <a href="#glsl-rt">
                 <div class="card">
                     <img src="images/glsl_rt.PNG" alt="Graphics Programming" style="width:100%">
@@ -139,21 +131,6 @@
                 <p>In this project, I wanted to explore blending between procedural animations and baked/key-framed animations. I programmed procedural animations for the walk cycle, shooting the weapon, and aiming down sights by interpolating the rotation of the viewmodel based on player input; for example, if the player presses a movement key, their viewmodel will rotate slightly in the direction of movement, and will move up and down, side to side, and front and back using various sin waves as the rotation and translation amounts. I manually animated jumping, landing, and weapon inspect animations that layer on top of the procedural animations by creating an animation state machine. To add more weight to the animations, I slightly rotate the player’s camera during certain animations as well.</p>
                 <iframe frameborder="0" src="https://itch.io/embed-upload/8647397?color=333333" allowfullscreen="" width="85%" height="560"><a href="https://tjgalcik.itch.io/fps-animations">Play FPS Animations on itch.io</a></iframe>
                 <p style="font-size: 14px; text-align: center; color:rgb(199, 199, 199)">Controls: WASD to move, Spacebar to jump, Left Mouse to fire, Right Mouse to aim down sights (hold), R to reload (no animation yet), F to inspect weapon</p>
-            </div>
-            </div>
-
-            <hr>
-            <div id="pom">
-            <div id="project-header">
-                <h2>Parallax Occlusion Mapping</h2>
-                <h3>August 2023</h3>
-            </div>
-            <div class="tag" style="background: #211081;">Unreal Engine</div>
-            <div id="graphics-projects" style="grid-template-columns: 58vw">
-                <p>Given a diffuse map, normal map, and height map, this Unreal Engine 5 material creates an illusion of depth while preserving the original vertex count of the geometry it's applied to. Instead of applying vertex displacement via a displacement map, parallax occlusion mapping creates a per-fragment displacement based on a height map with an adjustable height ratio. Combining this with a given normal map allows for lighting and shadows, creating a realistic yet cost-efficient effect. By using the pixel depth offset field in this material, intersections with other scene geometry occur relative to the perceived fragment-displacement (as opposed to appearing as intersecting with a flat plane).</p>
-            </div>
-            <div id="graphics-projects" style="grid-template-columns: 1">
-                <img src="images/pom.PNG" style="width:100%">
             </div>
             </div>
 
