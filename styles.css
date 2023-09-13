@@ -121,56 +121,56 @@ header{
 
 #projects-grid {
   padding: 1rem 10vw 1rem 10vw;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(16vw, 1fr));
-  grid-auto-rows: auto;
-  grid-gap: 1rem;
-  
-  justify-content: center;
+  display: flex; /* Use flex display */
+  flex-wrap: wrap; /* Allow multiple rows */
+  justify-content: center; /* Center horizontally */
+  gap: 1rem;
   text-align: center;
-
   color: white;
   background-color: white;
 }
 
-.card{
-    text-align: center;
-    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
-    border-radius: 5px;
-    height: 100%;
-    transition: 0.2s;
+.card {
+  text-align: center;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+  border-radius: 5px;
+  flex: 1; /* Flex to fill available space */
+  margin: 0.5rem; /* Add margin for spacing */
+  max-width: 16vw; /* Limit card width */
+  transition: 0.2s;
+  height: 23vw;
 }
 
 .card:hover {
-  box-shadow: 0 8px 8px 0 rgba(0,0,0,0.3);
+  box-shadow: 0 8px 8px 0 rgba(0, 0, 0, 0.3);
   transform: scale(1.02);
 }
 
-.container{
+.container {
   font-size: 1vw;
-  color:#626262;
+  color: #626262;
   padding: 10px 20px 10px 20px;
 }
 
 a {
-    text-decoration: none;
-    color: white;
-    transition: all .2s ease-in-out;
+  text-decoration: none;
+  color: white;
+  transition: all 0.2s ease-in-out;
 }
 
-img{
-    border-radius: 5px 5px 0px 0px;
+img {
+  border-radius: 5px 5px 0px 0px;
 }
 
-.btn{
+.btn {
   cursor: pointer;
-    background-color: transparent;
-    border-color: transparent;
-    color: white;
-    transition: 0.2s;
+  background-color: transparent;
+  border-color: transparent;
+  color: white;
+  transition: 0.2s;
 }
 
-.btn:hover{
+.btn:hover {
   color: rgb(123, 185, 158);
   transform: scale(1.2);
 }

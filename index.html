@@ -115,7 +115,8 @@
             <div class="tag" style="background: #c6a11e;">HLSL</div>    
             <div id="graphics-projects" style="grid-template-columns: 58vw">
                 <p>This HLSL shader uses raymarching and smooth boolean operators to imitate a lava lamp. I’ve placed three sphere signed distance functions (SDF) inside of a cone SDF; the three spheres are smooth unioned with each other, and then intersected with the cone SDF to simulate the glass lamp shape. To color the spheres, I used Blinn-Phong shading where the ray origin vector is the light source, then multiplied by a sampler2D gradient and specified brightness value to get the final color.</p>
-                <iframe frameborder="0" src="https://itch.io/embed-upload/8606030?color=333333" allowfullscreen="" width="85%" height="560"><a href="https://tjgalcik.itch.io/raymarching-lava-lamp">Play Raymarching Lava Lamp on itch.io</a></iframe>
+                <iframe width="80%" height="560px" src="https://www.youtube.com/embed/Gf73mEt0Cb0?si=lDPcIiYkfMtCkoSA" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                <iframe frameborder="0" src="https://itch.io/embed/2242673?bg_color=222222&amp;fg_color=eeeeee&amp;link_color=5b88fa&amp;border_color=363636" width="552" height="167"><a href="https://tjgalcik.itch.io/raymarching-lava-lamp">Raymarching Lava Lamp by tjgalcik</a></iframe>
             </div>
             </div>
 
@@ -129,8 +130,8 @@
             <div class="tag" style="background: #6e1081;">Unity</div>
             <div id="graphics-projects" style="grid-template-columns: 58vw">
                 <p>In this project, I wanted to explore blending between procedural animations and baked/key-framed animations. I programmed procedural animations for the walk cycle, shooting the weapon, and aiming down sights by interpolating the rotation of the viewmodel based on player input; for example, if the player presses a movement key, their viewmodel will rotate slightly in the direction of movement, and will move up and down, side to side, and front and back using various sin waves as the rotation and translation amounts. I manually animated jumping, landing, and weapon inspect animations that layer on top of the procedural animations by creating an animation state machine. To add more weight to the animations, I slightly rotate the player’s camera during certain animations as well.</p>
-                <iframe frameborder="0" src="https://itch.io/embed-upload/8647397?color=333333" allowfullscreen="" width="85%" height="560"><a href="https://tjgalcik.itch.io/fps-animations">Play FPS Animations on itch.io</a></iframe>
-                <p style="font-size: 14px; text-align: center; color:rgb(199, 199, 199)">Controls: WASD to move, Spacebar to jump, Left Mouse to fire, Right Mouse to aim down sights (hold), R to reload (no animation yet), F to inspect weapon</p>
+                <iframe width="80%" height="560px" src="https://www.youtube.com/embed/IOVaYqd4HiY?si=OhwuZ8qGJ9Ik5_0k" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                <iframe frameborder="0" src="https://itch.io/embed/2242694?linkback=true&amp;bg_color=222222&amp;fg_color=eeeeee&amp;link_color=5b88fa&amp;border_color=363636" width="552" height="167"><a href="https://tjgalcik.itch.io/fps-animations">FPS Animations by tjgalcik</a></iframe>
             </div>
             </div>
 
@@ -152,9 +153,13 @@
             <div id="raster">
             <div id="project-header">
                 <h2>Barycentric Triangle Rasterizer</h2>
-                <h3>May 2023></h3>
+                <h3>May 2023</h3>
             </div>
             <div class="tag" style="background: #c2432d;">C++</div>
+            <div id="graphics-projects" style="grid-template-columns: 29vw 29vw">
+                <img src="images/raster.png" style="width:100%; border-radius:5px">
+                <img src="images/raster2.png" style="width:100%; border-radius:5px">
+            </div>
             <div id="graphics-projects" style="grid-template-columns: 58vw">
                 <p>This C++ program demonstrates the rasterization stage of the rendering pipeline. It handles triangles, polygons, spheres, and cones. Each primitive is able to be turned into triangles with per-vertex normals as well so that Blinn-Phong shading is done correctly for the objects in the scene.
 
@@ -164,10 +169,6 @@
                     
                     My approach for triangulating a cone was to take each radius and place points around the circumference at that radius. The number of points will impact how many triangles the cone is comprised of. Once I placed these points in a circle for each radius, I created quads where the vertices were as follows: 1. First vertex of first radius 2. Second vertex of first radius 3. Second vertex of second radius 4. First vertex of second radius This creates quads for the entire cone in counter-clockwise order. Then, I treated the quads exactly as I did when handling polygons.
                     </p>
-            </div>
-            <div id="graphics-projects" style="grid-template-columns: 29vw 29vw">
-                <img src="images/raster.png" style="width:100%; border-radius:5px">
-                <img src="images/raster2.png" style="width:100%; border-radius:5px">
             </div>
             </div>
 
