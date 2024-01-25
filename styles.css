@@ -136,9 +136,9 @@ header{
   border-radius: 5px;
   flex: 1; /* Flex to fill available space */
   margin: 0.5rem; /* Add margin for spacing */
-  max-width: 16vw; /* Limit card width */
+  max-width: 10vw; /* Limit card width */
   transition: 0.2s;
-  height: 23vw;
+  height: 16vw;
 }
 
 .card:hover {
@@ -147,7 +147,7 @@ header{
 }
 
 .container {
-  font-size: 1vw;
+  font-size: 0.8vw;
   color: #626262;
   padding: 10px 20px 10px 20px;
 }
@@ -266,4 +266,9 @@ hr{
 
   iframe{
     justify-self: center;
+  }
+
+  li{
+    line-height: 1em;
+    color: white;
   }
