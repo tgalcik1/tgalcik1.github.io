@@ -8,313 +8,54 @@
         <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text&display=swap" rel="stylesheet">
     </head>
 
-    <body>
-        <div class="page-container">
-     
-        <header>
-            <div class="navbar">
-                <h2>Tristan Galcik</h2>
-                    <div id="social-buttons">
-                        <button class="btn" onclick="window.open('mailto:tristangalcik@gmail.com', '_blank');"><i class="fa fa-envelope"
-                            style="font-size: 24px;"></i></button>
-                        <button class="btn" onclick="window.open('https://github.com/tgalcik1', '_blank');"><i class="fa fa-github"
-                            style="font-size: 24px;"></i></button>
-                        <button class="btn" onclick="window.open('https://www.linkedin.com/in/tristangalcik/', '_blank');"><i
-                            class="fa fa-linkedin" style="font-size: 24px;"></i></button>
-                    </div>
-            </div>
-
-            <div class="about">
-                <img src="images/portrait.jpeg" class="portrait">
-                <div id="bio">Computer Science M.S. Student at the University of Maryland, Baltimore County.</div>
-                <div id="long-bio">Hi, I’m Tristan! I am a Master's student (expected graduation December 2024) with a specific concentration in computer graphics at UMBC. I received my Bachelor’s in Computer Science from UMBC in May 2023. Below is a porfolio of relevant projects I’ve worked on.</div>
-            </div>
-        </header>
-
-        <div id="projects-grid">
-            
-            <a href="#cutout">
-                <div class="card">
-                    <img src="images/cutout-square.PNG" alt="Graphics Programming" style="width:100%">
-                    <div class="container">
-                    <h4>Wall Cutout Shader</h4>
-                    </div>
-                </div>
-            </a>
-            <a href="#density">
-                <div class="card">
-                    <img src="images/density.PNG" alt="Graphics Programming" style="width:100%">
-                    <div class="container">
-                    <h4>Static Mesh Instancing via Density Texture</h4>
-                    </div>
-                </div>
-            </a>
-            <a href="#clouds">
-                <div class="card">
-                    <img src="images/cloud.PNG" alt="Graphics Programming" style="width:100%">
-                    <div class="container">
-                    <h4>Volumetric Clouds</h4>
-                    </div>
-                </div>
-            </a>
-            <a href="#boids">
-                <div class="card">
-                    <img src="images/boids.png" alt="Graphics Programming" style="width:100%">
-                    <div class="container">
-                    <h4>Boid Simulation</h4>
-                    </div>
-                </div>
-            </a>
-            <a href="#raymarch">
-                <div class="card">
-                    <img src="images/raymarch.PNG" alt="Graphics Programming" style="width:100%">
-                    <div class="container">
-                    <h4>HLSL Raymarching Lava Lamp Shader</h4>
-                    </div>
-                </div>
-            </a>
-            <a href="#fps-anim">
-                <div class="card">
-                    <img src="images/fps_anim.PNG" alt="Graphics Programming" style="width:100%">
-                    <div class="container">
-                    <h4>First-Person Animation State Machine</h4>
-                    </div>
-                </div>
-            </a>
-            <a href="#glsl-rt">
-                <div class="card">
-                    <img src="images/glsl_rt.PNG" alt="Graphics Programming" style="width:100%">
-                    <div class="container">
-                    <h4>GLSL Raytracing Fragment Shader</h4>
-                    </div>
-                </div>
-            </a>
-            <a href="#sfr">
-                <div class="card">
-                    <img src="images/sfr.png" alt="Graphics Programming" style="width:100%">
-                    <div class="container">
-                    <h4>Multiplayer Split-Screen FPS Game</h4>
-                    </div>
-                </div>
-            </a>
-            <a href="#raster">
-                <div class="card">
-                    <img src="images/raster.png" alt="Graphics Programming" style="width:100%">
-                    <div class="container">
-                    <h4>C++ CPU Rasterizer</h4>
-                    </div>
-                </div>
-            </a>
-            <a href="#noise">
-                <div class="card">
-                    <img src="images/glapp.PNG" alt="Graphics Programming" style="width:100%">
-                    <div class="container">
-                    <h4>OpenGL Noise via Iterated Replacement</h4>
-                    </div>
-                </div>
-            </a>
-            <a href="#cpp-rt">
-                <div class="card">
-                    <img src="images/balls3-ref.png" alt="Graphics Programming" style="width:100%">
-                    <div class="container">
-                    <h4>C++ Raytracer</h4>
-                    </div>
-                </div>
-            </a>
+    <div class="navbar">
+        <div>
+            <p>Tristan Galcik</p>
         </div>
 
-        <div id="graphics">
-            <hr>
-            <div id="cutout">
-            <div id="project-header">
-                <h2>Wall Cutout Shader</h2>
-                <h3>January 2024</h3>
-            </div>
-            <div class="tag" style="background: #27b35c;">C#</div>
-            <div class="tag" style="background: #6e1081;">Unity</div>
-            <div id="graphics-projects" style="grid-template-columns: 58vw">
-                <p>An approach I used for minimizing player model occlusion was cutting a transparent circle through parts of obstacles that occlude the vision from the camera to the player. The player's screen-space position is passed into the shader along with the size that the cutout should be, controlled via a C# script. Each frame, a ray is cast from the player's world space position to the camera's position; if the ray intersects an object, we know that the player is occluded and can pass in a circle size greater than zero. Otherwise, if there is no occlusion, a size of zero is passed. Within the shader, alpha clipping is enabled such that opaque objects do not need to be placed in the transparent render queue, only in the alpha test queue. We use a circle shape as a mask for the material's alpha, resulting in the cutout shape. In the examples below, this final mask was dithered as a stylistic choice.</p>
-            </div>
-            <div id="graphics-projects" style="grid-template-columns: 29vw 29vw">
-                <img src="images/cutout1.PNG" style="height:100%; width:100%; border-radius:5px">
-                <img src="images/cutout.gif" style="height:100%; width:100%; border-radius:5px">
-            </div>
-            </div>
-
-            <hr>
-            <div id="density">
-            <div id="project-header">
-                <h2>Static Mesh Instancing via Density Texture</h2>
-                <h3>November 2023</h3>
-            </div>
-            <div class="tag" style="background: #c2432d;">C++</div>
-            <div class="tag" style="background: #4b2f5a;">Unreal Engine</div>  
-            <div id="graphics-projects" style="grid-template-columns: 58vw">
-                <p>Using a density texture for random spawning probability has various useful applications. For example, density textures can define where trees should be placed on a terrain or where enemies should spawn in the world. Given a texture, I first choose which color channels to consider for spawn probabilities and compute a probability density function by looping through all texels and assigning each of them a normalized weight based on its RGB value. A random number 0-1 is generated, and a binary search through the CDF for the texel containing that value is performed. Once a texel is found, the position within that texel is jittered and used as the final position for the instanced mesh. </p>
-                <iframe width="66%" height="480px" src="https://www.youtube.com/embed/WE-jJ4S8OVk?si=D0IvI3KtQ772nJEH" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-            </div>
-            </div>
-
-            <hr>
-            <div id="clouds">
-            <div id="project-header">
-                <h2>Volumetric Clouds</h2>
-                <h3>September 2023 - November 2023</h3>
-            </div>
-            <div class="tag" style="background: #c6a11e;">HLSL</div>
-            <div class="tag" style="background: #6e1081;">Unity</div>   
-            <div id="graphics-projects" style="grid-template-columns: 58vw">
-                <p>Approximating a volumetric cloud using shaders primarily involves a density raymarch and a secondary shadow raymarch. At each density march, the opacity is sampled from a three-dimensional noise function. At the same position, we can march the current point in the cloud to the direction of the light vector to approximate the cloud's shading.</p>
-            </div>
-            <div id="graphics-projects" style="grid-template-columns: 29vw 29vw">
-                <img src="images/cloud.gif" style="height:93%; width:100%; border-radius:5px">
-                <img src="images/cloud2.gif" style="width:100%; border-radius:5px">
-            </div>
-            </div>
-
-            <hr>
-            <div id="boids">
-            <div id="project-header">
-                <h2>Boid Simulation</h2>
-                <h3>October 2023</h3>
-            </div>
-            <div class="tag" style="background: #c2432d;">C++</div>
-            <div class="tag" style="background: #4b2f5a;">Unreal Engine</div>    
-            <div id="graphics-projects" style="grid-template-columns: 58vw">
-                <p>
-                    The term “boids” refers to the artificial life simulation of flocking behavior. Each boid is given a sphere collider with a variable radius. This sphere collider registers a delegate function for entering and exiting collisions, allowing us to track when other boids enter the “neighborhood” (sphere radius) of a boid instance. Within this neighborhood, boid behavior is defined as follows:
-<li>Cohesion forces are applied by calculating the center of mass of all boids in the neighborhood, and scaled by some centering factor.</li>
-<li>Alignment forces are determined by accumulating the average velocity vector of all boids in the neighborhood, and scaled by an alignment threshold.</li>
-<li>Separation forces are determined by calculating the distance between all other boids within a single boid’s neighborhood, and scaled by a separation factor.</li>
-<p>This behavior is implemented within an AI controller, allowing it to be easily reused for controlling humanoid characters using animation blueprints.</p>
-            <iframe width="66%" height="480px" src="https://www.youtube.com/embed/Jopw22yvmPo?si=dZR8ExOHF1UN16st" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-            
-            </div>
-            </div>
-
-            <hr>
-            <div id="raymarch">
-            <div id="project-header">
-                <h2>HLSL Raymarching Lava Lamp Shader</h2>
-                <h3>August 2023</h3>
-            </div>
-            <div class="tag" style="background: #c6a11e;">HLSL</div>    
-            <div id="graphics-projects" style="grid-template-columns: 58vw">
-                <p>This HLSL shader uses raymarching and smooth boolean operators to imitate a lava lamp. I’ve placed three sphere signed distance functions (SDF) inside of a cone SDF; the three spheres are smooth unioned with each other, and then intersected with the cone SDF to simulate the glass lamp shape. To color the spheres, I used Blinn-Phong shading where the ray origin vector is the light source, then multiplied by a sampler2D gradient and specified brightness value to get the final color.</p>
-                <iframe width="66%" height="480px" src="https://www.youtube.com/embed/Gf73mEt0Cb0?si=lDPcIiYkfMtCkoSA" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-                <iframe frameborder="0" src="https://itch.io/embed/2242673?bg_color=222222&amp;fg_color=eeeeee&amp;link_color=5b88fa&amp;border_color=363636" width="552" height="167"><a href="https://tjgalcik.itch.io/raymarching-lava-lamp">Raymarching Lava Lamp by tjgalcik</a></iframe>
-            </div>
-            </div>
-
-            <hr>
-            <div id="fps-anim">
-            <div id="project-header">
-                <h2>First-Person Animation State Machine</h2>
-                <h3>August 2023</h3>
-            </div>
-            <div class="tag" style="background: #27b35c;">C#</div>
-            <div class="tag" style="background: #6e1081;">Unity</div>
-            <div id="graphics-projects" style="grid-template-columns: 58vw">
-                <p>In this project, I wanted to explore blending between procedural animations and baked/key-framed animations. I programmed procedural animations for the walk cycle, shooting the weapon, and aiming down sights by interpolating the rotation of the viewmodel based on player input; for example, if the player presses a movement key, their viewmodel will rotate slightly in the direction of movement, and will move up and down, side to side, and front and back using various sin waves as the rotation and translation amounts. I manually animated jumping, landing, and weapon inspect animations that layer on top of the procedural animations by creating an animation state machine. To add more weight to the animations, I slightly rotate the player’s camera during certain animations as well.</p>
-                <iframe width="66%" height="480px" src="https://www.youtube.com/embed/IOVaYqd4HiY?si=OhwuZ8qGJ9Ik5_0k" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-                <iframe frameborder="0" src="https://itch.io/embed/2242694?linkback=true&amp;bg_color=222222&amp;fg_color=eeeeee&amp;link_color=5b88fa&amp;border_color=363636" width="552" height="167"><a href="https://tjgalcik.itch.io/fps-animations">FPS Animations by tjgalcik</a></iframe>
-            </div>
-            </div>
-
-            <hr>
-            <div id="glsl-rt">
-            <div id="project-header">
-                <h2>GLSL Raytracing Fragment Shader</h2>
-                <h3>June 2023</h3>
-            </div>
-            <div class="tag" style="background: #08b1a3;">GLSL</div>
-            <div id="graphics-projects" style="grid-template-columns: 58vw">
-                <p>This GLSL fragment shader casts rays from a given eye point through each fragment's texture coordinate (normalized by the given resolution) in order to ray trace spheres. I've included support for Blinn-Phong diffuse lighting and specular highlights, shadow probing, and mirror reflections. Primitives are defined within the fragment shader.</p>
-                <iframe src="https://www.shadertoy.com/embed/DlcXWl?gui=false&t=10&paused=false&muted=true" frameborder="0"
-              allowfullscreen="allowfullscreen" width="80%" height="500vh" style="border-radius: 5px"></iframe>
-            </div>
-            </div>
-
-            <hr>
-            <div id="raster">
-            <div id="project-header">
-                <h2>Barycentric Triangle Rasterizer</h2>
-                <h3>May 2023</h3>
-            </div>
-            <div class="tag" style="background: #c2432d;">C++</div>
-            <div id="graphics-projects" style="grid-template-columns: 29vw 29vw">
-                <img src="images/raster.png" style="width:100%; border-radius:5px">
-                <img src="images/raster2.png" style="width:100%; border-radius:5px">
-            </div>
-            <div id="graphics-projects" style="grid-template-columns: 58vw">
-                <p>This C++ program demonstrates the rasterization stage of the rendering pipeline. It handles triangles, polygons, spheres, and cones. Each primitive is able to be turned into triangles with per-vertex normals as well so that Blinn-Phong shading is done correctly for the objects in the scene.
-
-                    I used glm for vector and matrix operations. I created the RasterFromWorld matrix by multiplying a lookAt matrix by a perspective matrix to get to NDC space, followed by a hand-made RasterFromNDC matrix. I then iterate over every triangle, computing the bounding box and calculating the barycentric coordinates to check if the triangle contains the pixel. If so, I update the z-buffer using an interpolation of the barycentric coordinates on the z value of each vertex of the triangle. If the computed z value is less than the current z value at that pixel, then I continue on to calculating the lighting.
-                    
-                    As for handling primitives, triangles were straightforward as the vertices and normals are read directly from a rayshade file. Polygons are split into two triangles whose normals are the normalized cross product of diagonal vertices. Spheres are turned into a mesh of triangle vertices and normals, and afterwards I just iterate through a for loop for every computed index linking the triangles together. Since the vertices and normals were already computed, I just created a new triangle and added the vertices and normals.
-                    
-                    My approach for triangulating a cone was to take each radius and place points around the circumference at that radius. The number of points will impact how many triangles the cone is comprised of. Once I placed these points in a circle for each radius, I created quads where the vertices were as follows: 1. First vertex of first radius 2. Second vertex of first radius 3. Second vertex of second radius 4. First vertex of second radius This creates quads for the entire cone in counter-clockwise order. Then, I treated the quads exactly as I did when handling polygons.
-                    </p>
-            </div>
-            </div>
-
-            <hr>
-            <div id="sfr">
-            <div id="project-header">
-                <h2>Split-Screen Multiplayer FPS Game</h2>
-                <h3>February 2023 - April 2023</h3>
-            </div>
-            <div class="tag" style="background: #27b35c;">C#</div>
-            <div class="tag" style="background: #6e1081;">Unity</div>
-            <div id="graphics-projects" style="grid-template-columns: 58vw">
-                <p>My primary goal for this project was to create a game with local multiplayer functionality. This meant effective use of object-oriented programming principles (specifically inheritance) was extremely important. Other objectives for this project included functional user interfaces, menus, and various adjustable game settings and video settings. </p>
-                <iframe width="66%" height="480px" src="https://www.youtube.com/embed/CNxKBT7y9_w?si=Ub9u5fLilru6KNAQ&hd=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-            </div>
-            </div>
-
-            <hr>
-            <div id="noise">
-            <div id="project-header">
-                <h2>OpenGL Noise via Iterated Displacement</h2>
-                <h3>February 2023 - March 2023</h3>
-            </div>
-            <div class="tag" style="background: #c2432d;">C++</div>
-            <div class="tag" style="background: #46b6d8;">OpenGL</div>
-            <div id="graphics-projects" style="grid-template-columns: 58vw">
-                <p>By applying iterative replacement to the vertex positions of an octahedron, the geometry becomes more akin to a rocky asteroid or planet. Starting with the eight initial triangles of the octahedron, I subdivide them into 32 triangles upon increasing the subdivision level in the OpenGL program. Each existing vertex maintains it's original position, while newly created vertices from the subdivision are normalized to the surface of a sphere, then given a random displacement. Continuing this process of subdivision, normalization, and displacement yields a surface with finer details resembling rocky terrain. Additionally, to maintain lighting accuracy, vertex normals are calculated for each new vertex using the weighted vertex normals of neighboring triangles from previous subdivision levels.</p>
-            </div>
-            <div id="graphics-projects" style="grid-template-columns: 29vw 29vw">
-                <img src="images/glapp2.png" style="width:100%; border-radius:5px">
-                <img src="images/glapp.PNG" style="width:100%; border-radius:5px">
-            </div>
-            </div>
-
-            <hr>
-            <div id="cpp-rt">
-            <div id="project-header">
-                <h2>C++ Raytracer</h2>
-                <h3>February 2023 - March 2023</h3>
-            </div>
-            <div class="tag" style="background: #c2432d;">C++</div>
-            <div id="graphics-projects" style="grid-template-columns: 58vw">
-                <p>Written entirely in C++ with no external libraries, this project parses a given text file in rayshade format (a subset of the Standard Procedural Database), and generates a .ppm image. The raytracer is able to handle spheres, triangles, and both convex and concave polygons as primitives. I’ve implemented Blinn-Phong diffuse shading and specular highlights, shadows, and mirror reflections. It supports anti-aliasing, which was done by taking multiple samples per pixel at random subpixel coordinates. I’ve also implemented a simple depth-of-field effect, which I accomplished by taking a given number of randomly displaced samples in the shape of a disk at the ray origin. The final pixel color after anti-aliasing and depth-of-field is the average of the subpixel samples.</p>
-            </div>
-            <div id="graphics-projects" style="grid-template-columns: 29vw 29vw">
-                <img src="images/balls3-ref.png" style="width:100%; border-radius:5px">
-                <img src="images/gears2.png" style="width:100%; border-radius:5px">
-            </div>
-            </div>
-            <hr>
-
+        <div>
+            <a href="#about">About</a>
+            <a href="#projects">Projects</a>
+            <a href="#experience">Experience</a>
+            <a href="#contact">Contact</a>
         </div>
     </div>
 
-    <div class="contact">
-        <h3>Contact:<button class="btn" onclick="window.open('mailto:tristangalcik@gmail.com', '_blank');"><i class="fa fa-envelope"
-            style="font-size: 24px; color: rgb(68, 68, 68)"></i></button>tristangalcik@gmail.com</h3>
-            
+    <div class="header">
+        <img class="portrait" src="images/image.jpg">
+        <div>
+            <h1>Tristan Galcik</h1>
+            <p>Software engineer and game developer with a passion for creating visually stunning digital experiences</p>
+        </div>
     </div>
-    
 
-    </body>
+    <div class="content">
+        <div id="about">
+            <p>
+                I’m a software engineer and game developer passionate about blending technical precision with captivating visuals. 
+                My work focuses on creating experiences that are as aesthetically pleasing as they are functional, whether I’m designing interactive gameplay mechanics or building dynamic user interfaces.
+            </p>
+
+            <p>
+                I recently earned my master’s degree in computer science while working on diverse projects, including building engaging learning platforms, crafting Unity shaders for visually immersive games, and experimenting with procedural art and graphics. 
+                My favorite work often lies at the crossroads of design, engineering, and storytelling, where I can bring ideas to life in innovative and visually compelling ways.
+            </p>
+
+            <p>
+                In the past, I’ve collaborated on projects ranging from educational technology to creative gaming systems. 
+                I also enjoy solving complex technical challenges, such as rendering real-time graphics, improving UI/UX experiences, and integrating seamless backend systems.
+            </p>
+        </div>
+
+        <div id="projects">
+            <h2>Projects</h2>
+            <button>View Full Project Archive</button>
+        </div>
+
+        <div id="experience">
+            <h2>Experience</h2>
+            <button>View My Resume</button>
+        </div>
+    </div>
+
 </html>
