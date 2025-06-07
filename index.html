@@ -1,121 +1,163 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <link rel="stylesheet" href="styles.css">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text&display=swap" rel="stylesheet">
-    </head>
+  <head>
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text&display=swap"
+      rel="stylesheet"
+    />
+  </head>
 
-    <div class="navbar">
-        <div>
-            <a href="index.html">Tristan Galcik</a>
-        </div>
+  <div id="dev-banner">
+    <span>🚧 Site under development!</span>
+    <button id="dev-banner-close" aria-label="Dismiss"></button>
+  </div>
 
-        <div class="nav-links">
-            <a href="#about">About</a>
-            <a href="projects.html">Projects</a>
-            <a href="#experience">Experience</a>
-            <a href="#contact">Contact</a>
-        </div>
+  <div class="navbar glass">
+    <div>
+      <a href="index.html">Tristan Galcik</a>
     </div>
 
-    <div class="header">
-        <img class="portrait" src="images/portrait-large.jpg">
-        <div>
-            <h1>Tristan Galcik</h1>
-            <p>Software engineer and game developer with a passion for creating visually stunning digital experiences</p>
-            <div class="socials">
-                <a href="mailto:tristangalcik@gmail.com" target="_blank"><i class="fa fa-envelope social-button"></i></a>
-                <a href="https://www.linkedin.com/in/tristangalcik/" target="_blank"><i class="fa fa-linkedin social-button"></i></a>
-                <a href="https://github.com/tgalcik1" target="_blank"><i class="fa fa-github social-button"></i></a>
-                <a href="https://www.youtube.com/@tristangamedev" target="_blank"><i class="fa fa-youtube-play social-button"></i></a>
-            </div>
+    <div class="nav-links">
+      <a href="#about">About</a>
+      <a href="projects.html">Projects</a>
+      <a href="#experience">Experience</a>
+      <a href="#contact">Contact</a>
+    </div>
+  </div>
 
-        </div>
+  <div class="header glass">
+    <img class="portrait" src="images/portrait-large.jpg" />
+    <div>
+      <h1>Tristan Galcik</h1>
+      <p>
+        Software engineer and game developer with a passion for creating
+        visually stunning digital experiences
+      </p>
+      <div class="socials">
+        <a href="mailto:tristangalcik@gmail.com" target="_blank"
+          ><i class="fa fa-envelope social-button"></i
+        ></a>
+        <a href="https://www.linkedin.com/in/tristangalcik/" target="_blank"
+          ><i class="fa fa-linkedin social-button"></i
+        ></a>
+        <a href="https://github.com/tgalcik1" target="_blank"
+          ><i class="fa fa-github social-button"></i
+        ></a>
+        <a href="https://www.youtube.com/@tristangamedev" target="_blank"
+          ><i class="fa fa-youtube-play social-button"></i
+        ></a>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div id="about">
+      <p>
+        I’m a software engineer and game developer passionate about blending
+        technical precision with captivating visuals. My work focuses on
+        creating experiences that are as aesthetically pleasing as they are
+        functional, whether I’m designing interactive gameplay mechanics or
+        building dynamic user interfaces.
+      </p>
+
+      <p>
+        I recently earned my master’s degree in computer science while working
+        on diverse projects, including building engaging learning platforms,
+        crafting Unity shaders for visually immersive games, and experimenting
+        with procedural art and graphics. My favorite work often lies at the
+        crossroads of design, engineering, and storytelling, where I can bring
+        ideas to life in innovative and visually compelling ways.
+      </p>
+
+      <p>
+        In the past, I’ve collaborated on projects ranging from educational
+        technology to creative gaming systems. I also enjoy solving complex
+        technical challenges, such as rendering real-time graphics, improving
+        UI/UX experiences, and integrating seamless backend systems.
+      </p>
     </div>
 
-    <div class="content">
-        <div id="about">
-            <p>
-                I’m a software engineer and game developer passionate about blending technical precision with captivating visuals. 
-                My work focuses on creating experiences that are as aesthetically pleasing as they are functional, whether I’m designing interactive gameplay mechanics or building dynamic user interfaces.
-            </p>
-
-            <p>
-                I recently earned my master’s degree in computer science while working on diverse projects, including building engaging learning platforms, crafting Unity shaders for visually immersive games, and experimenting with procedural art and graphics. 
-                My favorite work often lies at the crossroads of design, engineering, and storytelling, where I can bring ideas to life in innovative and visually compelling ways.
-            </p>
-
-            <p>
-                In the past, I’ve collaborated on projects ranging from educational technology to creative gaming systems. 
-                I also enjoy solving complex technical challenges, such as rendering real-time graphics, improving UI/UX experiences, and integrating seamless backend systems.
-            </p>
+    <div id="projects">
+      <div class="projects-header">
+        <h2>Current & Recent Projects</h2>
+        <form action="projects.html">
+          <input type="submit" value="View Full Project Archive" />
+        </form>
+      </div>
+      <div class="projects-grid">
+        <div class="project glass">
+          <img src="images/thumbnails/3dpixel_thumb.png" />
+          <h3>3D Pixel Art Game</h3>
+          <p style="font-size: 14px; margin-top: -8px">
+            December 2023 - Present
+          </p>
+          <p>
+            A personal project exploring 3D pixel art through custom shaders,
+            modeling, and animation techniques for a unique visual style
+          </p>
+          <div class="tags">
+            <div class="tag">Unity</div>
+            <div class="tag">C#</div>
+            <div class="tag">HLSL</div>
+            <div class="tag">Blender</div>
+          </div>
         </div>
 
-        <div id="projects">
-            <div class="projects-header">
-                <h2>Current & Recent Projects</h2>
-                <form action="projects.html">
-                    <input type="submit" value="View Full Project Archive" />
-                </form>
-            </div>
-            <div class="projects-grid">
-                <div class="project">
-                    <img src="images/thumbnails/3dpixel_thumb.png">
-                    <h3>3D Pixel Art Game</h3>
-                    <p style="font-size: 14px; margin-top: -8px;">December 2023 - Present</p>
-                    <p>A personal project exploring 3D pixel art through custom shaders, modeling, and animation techniques for a unique visual style</p>
-                    <div class="tags">
-                        <div class="tag">Unity</div>
-                        <div class="tag">C#</div>
-                        <div class="tag">HLSL</div>
-                        <div class="tag">Blender</div>
-                    </div>
-                </div>
-
-                <div class="project">
-                    <img src="images/thumbnails/eduquest_thumb.png">
-                    <h3>EduQuest LMS</h3>
-                    <p style="font-size: 14px; margin-top: -8px;">May 2024 - Present</p>
-                    <p>Full-stack development and AWS integration for a learning management system with embedded virtual machines</p>
-                    <div class="tags">
-                        <div class="tag">Vue.js</div>
-                        <div class="tag">Node.js</div>
-                        <div class="tag">Express</div>
-                        <div class="tag">AWS</div>
-                    </div>
-                </div>
-
-                <div class="project">
-                    <img src="images/thumbnails/neurometryx_thumb.JPG">
-                    <h3>Neurometryx Cognitive Battery Application</h3>
-                    <p style="font-size: 14px; margin-top: -8px;">June 2024 - September 2024</p>
-                    <p>Front-end development and UX/UI design for a cognitive assessment application, currently deployed across several health clinics</p>
-                    <div class="tags">
-                        <div class="tag">Electron</div>
-                        <div class="tag">Vue.js</div>
-                        <div class="tag">Node.js</div>
-                    </div>
-                </div>
-
-            </div>
+        <div class="project glass">
+          <img src="images/thumbnails/eduquest_thumb.png" />
+          <h3>EduQuest LMS</h3>
+          <p style="font-size: 14px; margin-top: -8px">May 2024 - Present</p>
+          <p>
+            Full-stack development and AWS integration for a learning management
+            system with embedded virtual machines
+          </p>
+          <div class="tags">
+            <div class="tag">Vue.js</div>
+            <div class="tag">Node.js</div>
+            <div class="tag">Express</div>
+            <div class="tag">AWS</div>
+          </div>
         </div>
 
-        <div id="experience">
-            <h2>Experience</h2>
-            <form action="">
-                <input type="submit" value="Download Resume" />
-            </form>
+        <div class="project glass">
+          <img src="images/thumbnails/neurometryx_thumb.JPG" />
+          <h3>Neurometryx Cognitive Battery Application</h3>
+          <p style="font-size: 14px; margin-top: -8px">
+            June 2024 - September 2024
+          </p>
+          <p>
+            Front-end development and UX/UI design for a cognitive assessment
+            application, currently deployed across several health clinics
+          </p>
+          <div class="tags">
+            <div class="tag">Electron</div>
+            <div class="tag">Vue.js</div>
+            <div class="tag">Node.js</div>
+          </div>
         </div>
-
-        <div id="contact">
-            <h2>Contact Information</h2>
-            <form action="">
-                <input type="submit" value="Download Resume" />
-            </form>
-        </div>
+      </div>
     </div>
 
+    <div id="experience">
+      <h2>Experience</h2>
+      <form action="">
+        <input type="submit" value="Download Resume" />
+      </form>
+    </div>
+
+    <div id="contact">
+      <h2>Contact Information</h2>
+      <p>
+        Feel free to reach out to me at
+        <a href="mailto:tristangalcik@gmail.com">tristangalcik@gmail.com</a>.
+      </p>
+    </div>
+  </div>
 </html>

@@ -1,42 +1,76 @@
-*{
-  font-family: 'Wix Madefor Text', sans-serif;
+* {
+  font-family: "Wix Madefor Text", sans-serif;
 }
 
 body {
   margin: 0;
   padding: 0;
-  background-color: white;
+  min-height: 100vh;
+  /* soft pastel gradient */
+  background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+  display: flex;
+  flex-direction: column;
+  font-family: "Wix Madefor Text", sans-serif;
 }
 
-a{
+.glass {
+  background: rgba(255, 255, 255, 0.15); /* semi-transparent white */
+  backdrop-filter: blur(10px); /* frosted blur */
+  -webkit-backdrop-filter: blur(10px); /* Safari support */
+  border: 1px solid rgba(255, 255, 255, 0.3); /* light border */
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); /* subtle depth */
+}
+
+.navbar.glass {
+  padding: 20px 60px;
+  position: fixed;
+  width: calc(100% - 120px);
+  z-index: 10;
+}
+
+.header.glass {
+  display: flex;
+  gap: 64px;
+  padding: 64px;
+  margin: 128px 10%;
+}
+
+.project.glass {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+}
+
+a {
   text-decoration: none;
   color: black;
 }
 
-.navbar{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px 60px 20px 60px;
-    position: fixed;
-    width: calc(100% - 120px);
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 60px 20px 60px;
+  position: fixed;
+  width: calc(100% - 120px);
 }
 
-.nav-links{
-    display: flex;
-    gap: 16px;
+.nav-links {
+  display: flex;
+  gap: 16px;
 }
 
-.navbar a{
+.navbar a {
   transition: all 0.3s ease;
 }
 
-.navbar a:hover{
+.navbar a:hover {
   color: gray;
   text-decoration: underline;
 }
 
-.header{
+.header {
   padding: 64px;
   display: flex;
   justify-content: center;
@@ -47,79 +81,79 @@ a{
   margin-right: 10%;
 }
 
-.portrait{
-    width: 200px;
-    height: 200px;
-    border-radius: 50%;
-    object-fit: cover;
-    aspect-ratio: 1 / 1;
-    transform: translate(-10px, 10px);
+.portrait {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  object-fit: cover;
+  aspect-ratio: 1 / 1;
+  transform: translate(-10px, 10px);
 }
 
-.socials{
+.socials {
   font-size: 20px;
   display: flex;
   gap: 16px;
 }
 
-.social-button{
+.social-button {
   transition: all 0.2s ease;
 }
 
-.social-button:hover{
+.social-button:hover {
   transform: scale(1.2);
   color: gray;
   cursor: pointer;
   filter: drop-shadow(0px 0px 8px rgba(0, 0, 0, 0.2));
 }
 
-.content{
-    margin-top: -64px;
-    margin-left: 10%;
-    margin-right: 10%;
-    gap: 64px;
-    padding: 64px;
+.content {
+  margin-top: -64px;
+  margin-left: 10%;
+  margin-right: 10%;
+  gap: 64px;
+  padding: 64px;
 }
 
-.tags{
+.tags {
   display: flex;
   gap: 8px;
 }
 
-.tag{
+.tag {
   font-size: 12px;
   padding: 8px 16px;
   border-radius: 16px;
   background-color: #f0f0f0;
 }
 
-#projects{
+#projects {
   margin-top: 64px;
 }
 
-.projects-header{
+.projects-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.projects-grid{
+.projects-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 32px;
   margin-bottom: 16px;
 }
 
-.project{
+.project {
   display: flex;
   flex-direction: column;
 }
 
-#experience{
+#experience {
   margin-top: 64px;
 }
 
-#contact{
+#contact {
   margin-top: 64px;
 }
 
@@ -143,10 +177,47 @@ a{
     width: calc(100% - 60px);
   }
 
-  .portrait{
+  .portrait {
     width: 150px;
     height: 150px;
     margin-top: 32px;
     margin-bottom: -32px;
   }
+}
+
+#dev-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #ffcc00;
+  color: #333;
+  font-weight: bold;
+  text-align: center;
+  padding: 0.75em 1em;
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1em;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+#dev-banner span {
+  flex: 1;
+}
+
+#dev-banner-close {
+  background: none;
+  border: none;
+  font-size: 1.2em;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  color: #333;
+}
+
+/* push page content down so banner doesn’t cover it */
+body.has-dev-banner {
+  padding-top: 50px; /* adjust to banner height */
 }
