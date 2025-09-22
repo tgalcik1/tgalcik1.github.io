@@ -1,0 +1,63 @@
+---
+// src/pages/index.astro
+import '../styles/global.css';
+import Navbar from '../components/Navbar.astro';
+import AuroraBackground from '../components/AuroraBackground';
+import AuroraHero from '../components/AuroraHero';
+import ProjectsGrid from '../components/ProjectsGrid';
+import SkillsSection from '../components/SkillsSection';
+import ContactSection from '../components/ContactSection';
+import LavaLampBackground from '../components/LavaLampBackground3D';
+
+// assets
+import planetsJpg from '../assets/images/planets.jpg';
+import meadowMp4 from '../assets/videos/meadow.mp4';
+import outlinesPng from '../assets/images/outlines.png'
+import treesPng from '../assets/images/trees.png'
+import ebb from '../assets/videos/ebb.mov'
+import eduquest from '../assets/images/encite_thumb.png'
+import neurom from '../assets/images/neurometryx_thumb.jpeg'
+
+const projects = [
+  // Graphics / Engines
+  { id: 'pxl-engine', title: '3D Pixel Art Engine', date: '10.2023 – present', href: '/blog/engine', ctaLabel: 'See More', mediaType: 'video', src: meadowMp4, category: 'Graphics/Engines', featured: true },
+  { id: 'trees',      title: '3D Pixel Art Trees', date: '9.2025',  href: '/blog/3d-pixel-art-trees', ctaLabel: 'Read', mediaType: 'image', src: treesPng.src, category: 'Graphics/Engines' },
+  { id: 'outlines',   title: '3D Pixel Art Outlines', date: '9.2025', href: '/blog/3d-pixel-art-outlines', ctaLabel: 'Read', mediaType: 'image', src: outlinesPng.src, category: 'Graphics/Engines' },
+  { id: 'godrays',    title: 'Volumetric Godrays', date: '1.2025', href: '/blog/3d-pixel-art-godrays', ctaLabel: 'Read', mediaType: 'image', src: '/images/placeholder-godrays.jpg', category: 'Graphics/Engines' },
+  { id: 'water',      title: '3D Pixel Art Water Shader', date: '11.2024', href: '/blog/3d-pixel-art-water', ctaLabel: 'Read', mediaType: 'image', src: '/images/placeholder-water.jpg', category: 'Graphics/Engines' },
+  { id: 'planets',    title: 'Shell-Textured Planets', date: '3.2025', href: '/blog/shell-textured-planets', ctaLabel: 'Read', mediaType: 'image', src: planetsJpg.src, category: 'Graphics/Engines' },
+
+  // Shaders
+  { id: 'clouds', title: 'Raymarched Clouds Shader', date: '6.2025', href: 'https://www.youtube.com/watch?v=kAhuCsv61Q8', ctaLabel: 'Watch', mediaType: 'image', src: '/images/placeholder-clouds.jpg', category: 'Shaders' },
+
+  // Fullstack / Frontend
+  { id: 'encite',   title: 'Encite LMS', date: '5.2024 - present', href: 'https://student.encite.io', ctaLabel: 'Visit', mediaType: 'image', src: eduquest.src, category: 'Fullstack / Frontend' },
+  { id: 'neurom',   title: 'Neurometryx Cognitive Battery', date: '7.2024 - 3.2025', mediaType: 'image', src: neurom.src, category: 'Fullstack / Frontend' },
+  { id: 'resteaze', title: 'RestEaze Desktop App', date: '2025', mediaType: 'image', src: '/images/resteaze.jpg', category: 'Fullstack / Frontend' },
+
+  // Creative Apps
+  { id: 'ebb', title: 'Earthbound Battle Backgrounds', date: '6.2025', href: 'https://github.com/tgalcik1/earthbound-backgrounds', ctaLabel: 'View Source Code', mediaType: 'video', src: ebb, category: 'Creative Apps' },
+];
+
+const skills = ['Astro','Vue','React','Tailwind','TypeScript','Node','AWS','Unity'];
+---
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tristan Galcik - Portfolio</title>
+  </head>
+  <body>
+  <AuroraBackground client:load opacity={0.5} blurPx={0} radialGradient={false}>
+    <LavaLampBackground client:load />
+    <Navbar />
+    <main class="w-full">
+      <AuroraHero client:visible />
+      <ProjectsGrid client:visible projects={projects} />
+      <SkillsSection client:visible skills={skills} />
+      <ContactSection client:visible />
+    </main>
+  </AuroraBackground>
+</body>
+</html>
