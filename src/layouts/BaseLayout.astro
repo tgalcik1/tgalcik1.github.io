@@ -1,0 +1,41 @@
+---
+import "../styles/global.css";
+import { site } from "../data/site";
+import { activeTheme, themeStyle } from "../themes";
+import dmMono400 from "@fontsource/dm-mono/files/dm-mono-latin-400-normal.woff2";
+import dmMono500 from "@fontsource/dm-mono/files/dm-mono-latin-500-normal.woff2";
+import fraunces300 from "@fontsource/fraunces/files/fraunces-latin-300-normal.woff2";
+import fraunces300Italic from "@fontsource/fraunces/files/fraunces-latin-300-italic.woff2";
+import fraunces400 from "@fontsource/fraunces/files/fraunces-latin-400-normal.woff2";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = `${site.name} | Developer`,
+  description = site.intro
+} = Astro.props;
+
+const themeVars = themeStyle(activeTheme);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={Astro.url.href} />
+    <link rel="preload" href={dmMono400} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={dmMono500} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={fraunces300} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={fraunces300Italic} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={fraunces400} as="font" type="font/woff2" crossorigin />
+  </head>
+  <body data-theme={activeTheme.name} style={themeVars}>
+    <slot />
+  </body>
+</html>

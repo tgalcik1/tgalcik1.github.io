@@ -1,0 +1,71 @@
+---
+import type { CollectionEntry } from "astro:content";
+import BaseLayout from "./BaseLayout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import BlogPostHero from "../components/BlogPostHero.astro";
+import PostPreviewCard from "../components/PostPreviewCard.astro";
+
+interface Props {
+  entry: CollectionEntry<"blog">;
+  morePosts: CollectionEntry<"blog">[];
+}
+
+const { entry, morePosts } = Astro.props;
+---
+
+<BaseLayout title={`${entry.data.title} | ${entry.data.category}`} description={entry.data.description}>
+  <Header />
+  <main>
+    <BlogPostHero
+      category={entry.data.category}
+      title={entry.data.title}
+      description={entry.data.description}
+      publishedAt={entry.data.publishedAt}
+      readTime={entry.data.readTime}
+    />
+    <article class="post-body shell prose">
+      <slot />
+    </article>
+
+    {
+      morePosts.length > 0 && (
+        <section class="shell section-gap">
+          <div class="section-heading">
+            <p class="eyebrow">More Writing</p>
+            <h2>More notes on graphics, systems, and building things carefully.</h2>
+          </div>
+          <div class="grid-border more-grid">
+            {morePosts.map((post) => (
+              <PostPreviewCard
+                href={`/blog/${post.data.slug}/`}
+                category={post.data.category}
+                title={post.data.title}
+                description={post.data.description}
+                publishedAt={post.data.publishedAt}
+              />
+            ))}
+          </div>
+        </section>
+      )
+    }
+  </main>
+  <Footer />
+</BaseLayout>
+
+<style>
+  .post-body {
+    width: min(calc(100% - 2rem), var(--article-width));
+    padding-top: 2rem;
+  }
+
+  .more-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @media (max-width: 900px) {
+    .more-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

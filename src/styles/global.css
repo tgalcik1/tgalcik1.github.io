@@ -1,21 +1,277 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "@fontsource/fraunces/300.css";
+@import "@fontsource/fraunces/400.css";
+@import "@fontsource/fraunces/500.css";
+@import "@fontsource/dm-mono/400.css";
+@import "@fontsource/dm-mono/500.css";
+
+:root {
+  --content-width: 1180px;
+  --article-width: 760px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  overscroll-behavior: none;
+  overflow-x: clip;
+}
 
 body {
-  background-color: black;
+  margin: 0;
+  min-width: 320px;
+  overscroll-behavior: none;
+  position: relative;
+  overflow-x: clip;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "DM Mono", monospace;
+  line-height: 1.65;
 }
 
-@layer utilities {
-  .transition-bg {
-    transition: background-color 300ms;
+body::before {
+  content: "";
+  position: absolute;
+  top: calc(var(--page-background-blur, 0px) * -1);
+  right: calc(var(--page-background-blur, 0px) * -1);
+  bottom: calc(var(--page-background-blur, 0px) * -1);
+  left: calc(var(--page-background-blur, 0px) * -1);
+  z-index: -1;
+  pointer-events: none;
+  background: var(--page-background);
+  background-repeat: no-repeat;
+  background-position: top center;
+  background-size: 100% 100lvh;
+  filter: blur(var(--page-background-blur, 0px));
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+main {
+  overflow: clip;
+}
+
+.shell {
+  width: min(calc(100% - 2rem), var(--content-width));
+  margin: 0 auto;
+}
+
+.section {
+  padding: 2rem 0 0;
+}
+
+.section-gap {
+  padding-top: 5rem;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 1.5rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.eyebrow::before {
+  content: "";
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.section-heading {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.section-heading h2,
+.section-heading h3,
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-family: "Fraunces", serif;
+  font-weight: 300;
+  letter-spacing: -0.03em;
+}
+
+.section-heading p,
+p {
+  margin: 0;
+  color: var(--text-soft);
+}
+
+.panel {
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  box-shadow: var(--shadow);
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 2.85rem;
+  padding: 0.8rem 1.2rem;
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.button svg {
+  display: block;
+  transform: translateY(0.01em);
+}
+
+.button.primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.button.secondary {
+  background: var(--button-secondary-bg);
+  color: var(--text);
+}
+
+.grid-border {
+  display: grid;
+  gap: 1px;
+  background: var(--border);
+}
+
+.card {
+  background: var(--card-bg);
+}
+
+.prose {
+  color: var(--text-soft);
+  font-size: 0.96rem;
+  line-height: 1.9;
+}
+
+.prose h2,
+.prose h3 {
+  margin: 3rem 0 1rem;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+}
+
+.prose p,
+.prose ul,
+.prose ol,
+.prose pre,
+.prose blockquote {
+  margin: 0 0 1.3rem;
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 1.25rem;
+}
+
+.prose code {
+  padding: 0.15rem 0.35rem;
+  background: var(--inline-code-bg);
+  color: var(--inline-code-text);
+  font-size: 0.9em;
+}
+
+.prose pre {
+  overflow-x: auto;
+  padding: 1.15rem;
+  border: 1px solid var(--border);
+  background: var(--code-bg);
+}
+
+.prose pre.astro-code {
+  padding: 1.15rem;
+  border: 1px solid var(--border);
+  background: var(--code-bg) !important;
+}
+
+.prose pre code {
+  padding: 0;
+  background: transparent;
+}
+
+.prose :not(pre) > code {
+  padding: 0.15rem 0.35rem;
+  background: var(--inline-code-bg);
+  color: var(--inline-code-text);
+  font-size: 0.9em;
+}
+
+.prose blockquote {
+  padding: 1rem 1.25rem;
+  border-left: 2px solid var(--accent);
+  background: var(--accent-soft);
+}
+
+.prose blockquote > :first-child {
+  margin-top: 0;
+}
+
+.prose blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+.muted-line {
+  height: 1px;
+  background: var(--border);
+}
+
+.accent-warm {
+  color: var(--accent);
+}
+
+.accent-teal {
+  color: var(--teal);
+}
+
+.accent-sage {
+  color: var(--sage);
+}
+
+.accent-plum {
+  color: var(--plum);
+}
+
+@media (max-width: 900px) {
+  .shell {
+    width: min(calc(100% - 2rem), var(--content-width));
   }
-}
 
-@import "@fontsource/geist-mono/400.css";
-@import "@fontsource/geist-mono/500.css";
-
-.font-geistmono {
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
-    Consolas, "Liberation Mono", "Courier New", monospace;
+  .section-gap {
+    padding-top: 4rem;
+  }
 }

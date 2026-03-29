@@ -1,0 +1,86 @@
+---
+slug: making-noise-beautiful
+title: Making noise beautiful
+description: A practical breakdown of smooth noise in GLSL, from raw hash functions to layered fBm fields.
+publishedAt: 2026-03-12
+readTime: 8 min read
+category: Shaders
+featured: true
+accent: teal
+---
+
+import ArticleShaderDemo from "../../components/ArticleShaderDemo.astro";
+import CodeWindow from "../../components/CodeWindow.astro";
+
+If you want a shader to feel organic instead of synthetic, noise is usually the first thing carrying that illusion. It gives you structure without obvious repetition, which makes motion feel alive instead of merely animated.
+
+The useful shift is to think of noise as a building material. It is not there to decorate the frame. It is there to create a field you can sample, distort, threshold, and layer into something intentional.
+
+## Start with a hash
+
+GLSL does not hand you a reliable random function, so the classic pattern is a cheap hash built from `sin()` and `dot()`. It is not magical, but it is stable and fast enough to build on.
+
+<CodeWindow title="Hash Function" language="GLSL">
+
+```glsl
+float hash(vec2 p) {
+  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+```
+
+</CodeWindow>
+
+That gives you noisy values per grid cell. The problem is that raw hash looks harsh. To get something smooth, sample the grid corners and interpolate between them with an eased curve.
+
+<CodeWindow title="Smooth Noise" language="GLSL">
+
+```glsl
+float noise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+
+  return mix(
+    mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
+    mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x),
+    f.y
+  );
+}
+```
+
+</CodeWindow>
+
+> Those seed numbers are empirical. Change them and the field gets a different character, but the structure of the trick stays the same.
+
+## Layer it until it feels useful
+
+Single-octave noise is fine for testing. It gets interesting when you stack several layers at increasing frequency and decreasing amplitude. That is the standard fBm move, and it is still one of the most practical ways to add richness fast.
+
+<ArticleShaderDemo />
+
+The point of the live demo is not polish. It is feedback. You can feel immediately how scale, speed, and octave count change the result, which makes the blog post more useful than a static screenshot.
+
+<CodeWindow title="fBm" language="GLSL">
+
+```glsl
+float fbm(vec2 p) {
+  float value = 0.0;
+  float amplitude = 0.5;
+
+  for (int i = 0; i < 5; i++) {
+    value += amplitude * noise(p);
+    p *= 2.0;
+    amplitude *= 0.5;
+  }
+
+  return value;
+}
+```
+
+</CodeWindow>
+
+## Why this belongs in the portfolio
+
+This kind of post shows the overlap between your interests better than a plain about page. It demonstrates graphics knowledge, code taste, and the ability to teach through working examples.
+
+That matters because your site is not just a brochure. It is proof that you can build interfaces, explain technical choices, and make visual systems that carry their own reasoning.

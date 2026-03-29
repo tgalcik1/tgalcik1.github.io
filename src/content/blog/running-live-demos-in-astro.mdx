@@ -1,0 +1,32 @@
+---
+slug: running-live-demos-in-astro
+title: Running live demos in Astro without making the whole site heavy
+description: A small architecture note on mixing mostly-static pages with interactive islands for demos and code examples.
+publishedAt: 2026-02-03
+readTime: 6 min read
+category: Full-stack
+featured: true
+accent: warm
+---
+
+import CodeWindow from "../../components/CodeWindow.astro";
+
+Astro is a strong fit for a developer site because most of the content is static, but the interesting parts are not. You want the homepage fast, the writing pages indexable, and the shader demos interactive only where they need to be.
+
+That is why islands are the right default here. The page stays mostly HTML and CSS, then a demo component hydrates where there is real user value.
+
+<CodeWindow title="Astro Island" language="Astro">
+
+```astro
+---
+import ShaderCanvas from "../components/ShaderCanvas";
+---
+
+<section class="demo-frame">
+  <ShaderCanvas client:load variant="warm" />
+</section>
+```
+
+</CodeWindow>
+
+The result is a portfolio that still feels authored instead of becoming a client-rendered app disguised as one.

@@ -1,0 +1,52 @@
+---
+interface Props {
+  href: string;
+  category: string;
+  title: string;
+  description: string;
+  publishedAt: Date;
+}
+
+const { href, category, title, description, publishedAt } = Astro.props;
+---
+
+<a class="post-preview card" href={href}>
+  <span class="post-preview__category">{category}</span>
+  <h3>{title}</h3>
+  <p>{description}</p>
+  <time datetime={publishedAt.toISOString()}>
+    {publishedAt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+  </time>
+</a>
+
+<style>
+  .post-preview {
+    display: grid;
+    gap: 0.8rem;
+    padding: 1.25rem;
+    min-height: 14rem;
+  }
+
+  .post-preview__category,
+  .post-preview time {
+    font-size: 0.7rem;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+  }
+
+  .post-preview__category {
+    color: var(--teal);
+  }
+
+  .post-preview h3 {
+    font-size: 1.45rem;
+  }
+
+  .post-preview p {
+    color: var(--text-soft);
+  }
+
+  .post-preview time {
+    color: var(--text-muted);
+  }
+</style>

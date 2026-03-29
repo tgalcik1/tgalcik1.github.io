@@ -1,0 +1,295 @@
+---
+import { site } from "../data/site";
+
+const pathname = Astro.url.pathname;
+const links = [
+  { href: "/", label: "Work" },
+  { href: "/about", label: "About" },
+  { href: "/blog", label: "Writing" },
+  { href: "mailto:hello@tristangalcik.com", label: "Contact", accent: true }
+];
+---
+
+<header class="site-header">
+  <div class="shell site-header__inner">
+    <a class="site-header__brand-wrap" href="/">
+      <span class="site-header__avatar">
+        <img class="site-header__avatar-image" src={site.avatarPath} alt="" loading="eager" decoding="async" />
+      </span>
+      <span class="site-header__brand">{site.shortName}</span>
+    </a>
+    <nav aria-label="Primary">
+      <ul class="site-header__nav">
+        {
+          links.map((link) => {
+            const active = link.href !== "/" ? pathname.startsWith(link.href) : pathname === "/";
+            return (
+              <li>
+                <a class:list={[active && "is-active", link.accent && "is-accent"]} href={link.href}>
+                  {link.label}
+                </a>
+              </li>
+            );
+          })
+        }
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="site-header-overlay" data-header-overlay>
+  <div class="site-header__overlay-inner">
+    <a class="site-header__overlay-avatar-link" href="/" aria-label={site.shortName}>
+      <span class="site-header__overlay-avatar">
+        <img class="site-header__overlay-avatar-image" src={site.avatarPath} alt="" loading="eager" decoding="async" />
+      </span>
+    </a>
+    <nav aria-label="Primary">
+      <ul class="site-header__overlay-nav">
+        {
+          links.map((link) => {
+            const active = link.href !== "/" ? pathname.startsWith(link.href) : pathname === "/";
+            return (
+              <li>
+                <a class:list={[active && "is-active", link.accent && "is-accent"]} href={link.href}>
+                  {link.label}
+                </a>
+              </li>
+            );
+          })
+        }
+      </ul>
+    </nav>
+  </div>
+</div>
+
+<script is:inline>
+  const header = document.querySelector(".site-header");
+  const overlay = document.querySelector("[data-header-overlay]");
+
+  if (header instanceof HTMLElement && overlay instanceof HTMLElement) {
+    const toggleOverlay = () => {
+      overlay.classList.toggle("is-visible", header.getBoundingClientRect().bottom <= 0);
+    };
+
+    toggleOverlay();
+    window.addEventListener("scroll", toggleOverlay, { passive: true });
+  }
+</script>
+
+<style>
+  .site-header {
+    position: relative;
+    z-index: 20;
+    background: transparent;
+  }
+
+  .site-header__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 4.5rem;
+  }
+
+  .site-header__brand-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    min-width: 0;
+  }
+
+  .site-header__avatar {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid var(--avatar-border);
+    flex: 0 0 auto;
+  }
+
+  .site-header__avatar-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    filter: grayscale(1) contrast(1.05);
+  }
+
+  .site-header-overlay {
+    position: fixed;
+    top: 0.9rem;
+    left: 50%;
+    width: auto;
+    max-width: calc(100% - 1.5rem);
+    transform: translate(-50%, -0.4rem);
+    z-index: 30;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 180ms ease, transform 180ms ease, visibility 180ms ease;
+    background: var(--overlay-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    box-shadow: var(--overlay-shadow);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .site-header-overlay.is-visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translate(-50%, 0);
+  }
+
+  .site-header__overlay-inner {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    min-height: 3rem;
+    padding: 0 1.05rem;
+  }
+
+  .site-header__overlay-avatar-link {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+  }
+
+  .site-header__overlay-avatar {
+    width: 1.95rem;
+    height: 1.95rem;
+    padding: 0;
+    border-radius: 999px;
+    border: 1px solid var(--avatar-border);
+    overflow: hidden;
+    flex: 0 0 auto;
+  }
+
+  .site-header__overlay-avatar-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    filter: grayscale(1) contrast(1.05);
+  }
+
+  .site-header__brand {
+    font-family: "Fraunces", serif;
+    font-size: 1.05rem;
+    letter-spacing: 0.02em;
+  }
+
+  .site-header__nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .site-header__nav li,
+  .site-header__overlay-nav li {
+    list-style: none;
+  }
+
+  .site-header__nav a {
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .site-header__nav a.is-active {
+    color: var(--text);
+  }
+
+  .site-header__nav a.is-accent {
+    color: var(--accent);
+  }
+
+  .site-header__overlay-nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    white-space: nowrap;
+  }
+
+  .site-header__overlay-nav a {
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .site-header__overlay-nav a.is-active {
+    color: var(--text);
+  }
+
+  .site-header__overlay-nav a.is-accent {
+    color: var(--accent);
+  }
+
+  @media (max-width: 720px) {
+    .site-header {
+      padding-top: 0.2rem;
+    }
+
+    .site-header__inner {
+      min-height: 4rem;
+      padding: 0.4rem 0;
+      align-items: center;
+      flex-direction: row;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .site-header__brand-wrap {
+      gap: 0.7rem;
+      min-width: 0;
+    }
+
+    .site-header__brand {
+      font-size: 0.92rem;
+    }
+
+    .site-header__avatar {
+      width: 1.95rem;
+      height: 1.95rem;
+    }
+
+    .site-header__overlay-inner {
+      min-height: 3.4rem;
+      padding: 0 0.9rem;
+      gap: 0.75rem;
+    }
+
+    .site-header-overlay {
+      top: 0.75rem;
+      border-radius: 1.2rem;
+    }
+
+    .site-header__nav {
+      flex-wrap: nowrap;
+      gap: 0.9rem;
+      justify-content: flex-end;
+    }
+
+    .site-header__nav a {
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+    }
+
+    .site-header__overlay-nav {
+      gap: 0.8rem;
+    }
+  }
+</style>

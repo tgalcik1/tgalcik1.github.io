@@ -1,0 +1,68 @@
+---
+interface Props {
+  category: string;
+  title: string;
+  description: string;
+  publishedAt: Date;
+  readTime: string;
+}
+
+const { category, title, description, publishedAt, readTime } = Astro.props;
+---
+
+<section class="post-hero shell">
+  <a class="post-hero__back" href="/blog">All posts</a>
+  <div class="post-hero__meta">
+    <span>{category}</span>
+    <time datetime={publishedAt.toISOString()}>
+      {publishedAt.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+    </time>
+    <span>{readTime}</span>
+  </div>
+  <h1>{title}</h1>
+  <p>{description}</p>
+</section>
+
+<style>
+  .post-hero {
+    width: min(calc(100% - 2rem), var(--article-width));
+    padding-top: 2.25rem;
+  }
+
+  .post-hero__back,
+  .post-hero__meta {
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .post-hero__back {
+    display: inline-flex;
+    color: var(--text-muted);
+  }
+
+  .post-hero__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.85rem;
+    margin: 2rem 0 1.25rem;
+    color: var(--text-muted);
+  }
+
+  .post-hero__meta span:first-child {
+    color: var(--teal);
+  }
+
+  .post-hero h1 {
+    font-size: clamp(2.8rem, 6vw, 4.8rem);
+    line-height: 1.02;
+  }
+
+  .post-hero p {
+    margin-top: 1rem;
+    font-family: "Fraunces", serif;
+    font-size: clamp(1.15rem, 2.1vw, 1.45rem);
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+</style>

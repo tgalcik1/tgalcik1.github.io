@@ -1,0 +1,83 @@
+---
+interface Props {
+  language?: string;
+  title?: string;
+}
+
+const { language = "GLSL", title = "Source" } = Astro.props;
+---
+
+<div class="code-window">
+  <div class="code-window__header">
+    <div class="code-window__dots" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <span>{title}</span>
+    <span>{language}</span>
+  </div>
+  <div class="code-window__body">
+    <slot />
+  </div>
+</div>
+
+<style>
+  .code-window {
+    margin: 2rem 0;
+    border: 1px solid var(--border);
+    background: var(--code-bg);
+  }
+
+  .code-window__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .code-window__dots {
+    display: flex;
+    gap: 0.35rem;
+  }
+
+  .code-window__dots span {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 999px;
+    background: var(--text-muted);
+  }
+
+  .code-window__dots span:first-child {
+    background: var(--window-dot-red);
+  }
+
+  .code-window__dots span:nth-child(2) {
+    background: var(--window-dot-yellow);
+  }
+
+  .code-window__dots span:nth-child(3) {
+    background: var(--window-dot-green);
+  }
+
+  .code-window__body {
+    padding: 0;
+  }
+
+  :global(.code-window__body pre.astro-code) {
+    margin: 0;
+    border: 0;
+    padding: 1rem;
+    background: transparent !important;
+  }
+
+  :global(.code-window__body code) {
+    background: transparent;
+  }
+</style>

@@ -1,0 +1,106 @@
+---
+import { site } from "../data/site";
+import SocialIcon from "./SocialIcon.astro";
+import { execSync } from "node:child_process";
+
+const fallbackCommit = {
+  hash: "unknown",
+  date: "",
+  subject: "uncommitted",
+};
+
+const commit = (() => {
+  try {
+    const [hash = "", date = "", subject = ""] = execSync(
+      "git log -1 --date=short --pretty=format:%h%n%ad%n%s",
+      {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      },
+    )
+      .trim()
+      .split("\n");
+
+    return {
+      hash: hash || fallbackCommit.hash,
+      date: date || fallbackCommit.date,
+      subject: subject || fallbackCommit.subject,
+    };
+  } catch {
+    return fallbackCommit;
+  }
+})();
+---
+
+<footer class="site-footer">
+  <div class="shell site-footer__inner">
+    <p class="site-footer__meta">
+      <span>{commit.hash}</span>
+      {commit.date && <span class="site-footer__meta-sep" aria-hidden="true">·</span>}
+      {commit.date && <span>{commit.date}</span>}
+      <span class="site-footer__meta-sep" aria-hidden="true">·</span>
+      <span>{commit.subject}</span>
+    </p>
+    <div class="site-footer__links">
+      {
+        site.socialLinks.map((link) => (
+          <a href={link.href} target={link.href.startsWith("http") ? "_blank" : undefined} rel="noreferrer">
+            <SocialIcon kind={link.label} />
+            {link.label}
+          </a>
+        ))
+      }
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    margin-top: 5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .site-footer__inner {
+    display: flex;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1.5rem 0 2.25rem;
+  }
+
+  .site-footer p,
+  .site-footer a {
+    font-size: 0.74rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .site-footer__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+  }
+
+  .site-footer__meta-sep {
+    opacity: 0.65;
+  }
+
+  .site-footer a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    line-height: 1;
+  }
+
+  .site-footer__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  @media (max-width: 760px) {
+    .site-footer__inner {
+      flex-direction: column;
+    }
+  }
+</style>

@@ -1,63 +1,447 @@
 ---
-// src/pages/index.astro
-import '../styles/global.css';
-import Navbar from '../components/Navbar.astro';
-import AuroraBackground from '../components/AuroraBackground';
-import AuroraHero from '../components/AuroraHero';
-import ProjectsGrid from '../components/ProjectsGrid';
-import SkillsSection from '../components/SkillsSection';
-import ContactSection from '../components/ContactSection';
-import LavaLampBackground from '../components/LavaLampBackground3D';
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import ProjectCard from "../components/ProjectCard.astro";
+import PostPreviewCard from "../components/PostPreviewCard.astro";
+import SocialIcon from "../components/SocialIcon.astro";
+import PixelatedStudy from "../components/PixelatedStudy";
+import ShaderCanvas from "../components/ShaderCanvas";
+import { featuredProjects, site } from "../data/site";
+import { activeTheme } from "../themes";
 
-// assets
-import planetsJpg from '../assets/images/planets.jpg';
-import meadowMp4 from '../assets/videos/meadow.mp4';
-import outlinesPng from '../assets/images/outlines.png'
-import treesPng from '../assets/images/trees.png'
-import ebb from '../assets/videos/ebb.mov'
-import eduquest from '../assets/images/encite_thumb.png'
-import neurom from '../assets/images/neurometryx_thumb.jpeg'
-
-const projects = [
-  // Graphics / Engines
-  { id: 'pxl-engine', title: '3D Pixel Art Engine', date: '10.2023 – present', href: '/blog/engine', ctaLabel: 'See More', mediaType: 'video', src: meadowMp4, category: 'Graphics/Engines', featured: true },
-  { id: 'trees',      title: '3D Pixel Art Trees', date: '9.2025',  href: '/blog/3d-pixel-art-trees', ctaLabel: 'Read', mediaType: 'image', src: treesPng.src, category: 'Graphics/Engines' },
-  { id: 'outlines',   title: '3D Pixel Art Outlines', date: '9.2025', href: '/blog/3d-pixel-art-outlines', ctaLabel: 'Read', mediaType: 'image', src: outlinesPng.src, category: 'Graphics/Engines' },
-  { id: 'godrays',    title: 'Volumetric Godrays', date: '1.2025', href: '/blog/3d-pixel-art-godrays', ctaLabel: 'Read', mediaType: 'image', src: '/images/placeholder-godrays.jpg', category: 'Graphics/Engines' },
-  { id: 'water',      title: '3D Pixel Art Water Shader', date: '11.2024', href: '/blog/3d-pixel-art-water', ctaLabel: 'Read', mediaType: 'image', src: '/images/placeholder-water.jpg', category: 'Graphics/Engines' },
-  { id: 'planets',    title: 'Shell-Textured Planets', date: '3.2025', href: '/blog/shell-textured-planets', ctaLabel: 'Read', mediaType: 'image', src: planetsJpg.src, category: 'Graphics/Engines' },
-
-  // Shaders
-  { id: 'clouds', title: 'Raymarched Clouds Shader', date: '6.2025', href: 'https://www.youtube.com/watch?v=kAhuCsv61Q8', ctaLabel: 'Watch', mediaType: 'image', src: '/images/placeholder-clouds.jpg', category: 'Shaders' },
-
-  // Fullstack / Frontend
-  { id: 'encite',   title: 'Encite LMS', date: '5.2024 - present', href: 'https://student.encite.io', ctaLabel: 'Visit', mediaType: 'image', src: eduquest.src, category: 'Fullstack / Frontend' },
-  { id: 'neurom',   title: 'Neurometryx Cognitive Battery', date: '7.2024 - 3.2025', mediaType: 'image', src: neurom.src, category: 'Fullstack / Frontend' },
-  { id: 'resteaze', title: 'RestEaze Desktop App', date: '2025', mediaType: 'image', src: '/images/resteaze.jpg', category: 'Fullstack / Frontend' },
-
-  // Creative Apps
-  { id: 'ebb', title: 'Earthbound Battle Backgrounds', date: '6.2025', href: 'https://github.com/tgalcik1/earthbound-backgrounds', ctaLabel: 'View Source Code', mediaType: 'video', src: ebb, category: 'Creative Apps' },
-];
-
-const skills = ['Astro','Vue','React','Tailwind','TypeScript','Node','AWS','Unity'];
+const posts = (await getCollection("blog"))
+  .sort((a, b) => b.data.publishedAt.getTime() - a.data.publishedAt.getTime())
+  .slice(0, 3);
 ---
-<!doctype html>
-<html lang="en" class="scroll-smooth">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Tristan Galcik - Portfolio</title>
-  </head>
-  <body>
-  <AuroraBackground client:load opacity={0.5} blurPx={0} radialGradient={false}>
-    <LavaLampBackground client:load />
-    <Navbar />
-    <main class="w-full">
-      <AuroraHero client:visible />
-      <ProjectsGrid client:visible projects={projects} />
-      <SkillsSection client:visible skills={skills} />
-      <ContactSection client:visible />
-    </main>
-  </AuroraBackground>
-</body>
-</html>
+
+<BaseLayout>
+  <Header />
+  <main>
+    <section class="hero-wrap">
+      <div class="hero shell">
+        <div class="hero__copy">
+          <p class="eyebrow">{site.role}</p>
+          <h1>
+            {site.heroLineA} <em>{site.heroEmphasis}</em>
+            <br />
+            <span>{site.heroLineB}</span>
+          </h1>
+          <p class="hero__lede">{site.bio}</p>
+          <div class="button-row">
+            <a class="button primary" href="#projects">See selected work</a>
+            <a class="button secondary" href="/blog">Read the blog</a>
+          </div>
+        </div>
+
+        <div class="hero__visual panel">
+          <div class="hero__visual-main" data-demo-carousel data-demo-chrome="none">
+            <div class="hero__demo is-active" data-demo-slide data-demo-chrome="none">
+              <PixelatedStudy client:load />
+              <span>Live study · pixelated crystal scene</span>
+            </div>
+            <div class="hero__demo" data-demo-slide data-demo-chrome="framed">
+              <ShaderCanvas client:load variant={activeTheme.shaderVariant} />
+              <span>Live study · domain-warped noise</span>
+            </div>
+          </div>
+          <div class="hero__visual-controls">
+            <div class="hero__visual-controls-inner">
+              <button class="hero__visual-arrow" type="button" data-demo-prev aria-label="Previous demo">
+                <span aria-hidden="true">←</span>
+              </button>
+              <div class="hero__visual-dots" role="tablist" aria-label="Hero demos">
+                <button
+                  class="hero__visual-dot is-active"
+                  type="button"
+                  role="tab"
+                  aria-selected="true"
+                  data-demo-dot
+                  aria-label="Show pixelated crystal demo"
+                ></button>
+                <button
+                  class="hero__visual-dot"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  data-demo-dot
+                  aria-label="Show domain-warped noise demo"
+                ></button>
+              </div>
+              <button class="hero__visual-arrow" type="button" data-demo-next aria-label="Next demo">
+                <span aria-hidden="true">→</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="projects" class="shell section-gap">
+      <div class="section-heading">
+        <p class="eyebrow">Selected Work</p>
+        <h2>Professional enough for product teams, expressive enough to still look like it came from a person.</h2>
+        <p>{site.intro}</p>
+      </div>
+      <div class="grid-border projects-grid panel">
+        {featuredProjects.map((project) => <ProjectCard {...project} />)}
+      </div>
+    </section>
+
+    <section class="shell section-gap">
+      <div class="section-heading">
+        <p class="eyebrow">Writing</p>
+        <h2>Blog posts designed for code, experiments, and technical walkthroughs.</h2>
+        <p>
+          Astro plus MDX gives you room for polished writing, embedded React demos, and shader breakdowns without
+          turning the whole site into a JS-heavy app.
+        </p>
+      </div>
+      <div class="grid-border writing-grid panel">
+        {posts.map((post) => (
+          <PostPreviewCard
+            href={`/blog/${post.data.slug}/`}
+            category={post.data.category}
+            title={post.data.title}
+            description={post.data.description}
+            publishedAt={post.data.publishedAt}
+          />
+        ))}
+      </div>
+    </section>
+
+    <section class="shell section-gap cta">
+      <div class="cta__panel panel">
+        <div>
+          <p class="eyebrow">Contact</p>
+          <h2>Available for product work, frontend-heavy systems, and graphics-driven experiments.</h2>
+        </div>
+        <div class="cta__actions">
+          <p>
+            If the project needs both engineering clarity and a stronger visual point of view, that is the work I want
+            more of.
+          </p>
+          <div class="button-row">
+            <a class="button primary cta-link" href={`mailto:${site.email}`}>
+              <SocialIcon kind="Email" />
+              Email me
+            </a>
+            <a class="button secondary" href="https://github.com/tgalcik1" target="_blank" rel="noreferrer">
+              <SocialIcon kind="GitHub" />
+              GitHub
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</BaseLayout>
+
+<script is:inline>
+  const initHeroCarousel = () => {
+    const visual = document.querySelector(".hero__visual");
+    const carousel = visual?.querySelector("[data-demo-carousel]");
+    if (!(carousel instanceof HTMLElement) || !(visual instanceof HTMLElement)) return;
+
+    const slides = Array.from(carousel.querySelectorAll("[data-demo-slide]"));
+    const dots = Array.from(visual.querySelectorAll("[data-demo-dot]"));
+    const prev = visual.querySelector("[data-demo-prev]");
+    const next = visual.querySelector("[data-demo-next]");
+    let index = 0;
+
+    const render = () => {
+      const activeSlide = slides[index];
+      const chrome = activeSlide?.getAttribute("data-demo-chrome") ?? "framed";
+      carousel.setAttribute("data-demo-chrome", chrome);
+
+      slides.forEach((slide, slideIndex) => {
+        slide.classList.toggle("is-active", slideIndex === index);
+      });
+
+      dots.forEach((dot, dotIndex) => {
+        dot.classList.toggle("is-active", dotIndex === index);
+        dot.setAttribute("aria-selected", dotIndex === index ? "true" : "false");
+      });
+    };
+
+    prev?.addEventListener("click", () => {
+      index = (index - 1 + slides.length) % slides.length;
+      render();
+    });
+
+    next?.addEventListener("click", () => {
+      index = (index + 1) % slides.length;
+      render();
+    });
+
+    dots.forEach((dot, dotIndex) => {
+      dot.addEventListener("click", () => {
+        index = dotIndex;
+        render();
+      });
+    });
+
+    render();
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initHeroCarousel, { once: true });
+  } else {
+    initHeroCarousel();
+  }
+</script>
+
+<style>
+  .hero-wrap {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: 2rem;
+    padding-top: 4rem;
+    align-items: stretch;
+  }
+
+  .hero__copy {
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero__copy h1 {
+    font-size: clamp(3.9rem, 9vw, 7rem);
+    line-height: 0.95;
+  }
+
+  .hero__copy h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .hero__copy h1 span {
+    color: var(--text-muted);
+  }
+
+  .hero__lede {
+    max-width: 34rem;
+    margin: 1.5rem 0 2rem;
+    font-size: 0.95rem;
+  }
+
+  .hero__visual {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+    position: relative;
+    z-index: 1;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .hero__visual-main {
+    position: relative;
+    flex: 1;
+    min-height: clamp(27.5rem, 38vw, 32rem);
+    background: transparent;
+    overflow: hidden;
+  }
+
+  .hero__visual-main::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .hero__visual-main[data-demo-chrome="none"]::before {
+    border: 0;
+    background: transparent;
+  }
+
+  .hero__demo {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 220ms ease;
+    overflow: hidden;
+  }
+
+  .hero__demo::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .hero__demo[data-demo-chrome="none"]::before {
+    border: 0;
+    background: transparent;
+  }
+
+  .hero__demo.is-active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .hero__demo > :not(span) {
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero__demo span {
+    position: absolute;
+    left: 1rem;
+    bottom: 1rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    z-index: 2;
+  }
+
+  .hero__visual-main :global(canvas) {
+    width: 100%;
+    height: 100%;
+  }
+
+  .hero__visual-main :global(.pixelated-study) {
+    width: 100%;
+    height: 100%;
+  }
+
+  .hero__visual-main :global(.pixelated-study canvas) {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .hero__visual-controls {
+    display: grid;
+    place-items: center;
+    align-items: center;
+    min-height: 4.25rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .hero__visual-controls-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    width: 100%;
+  }
+
+  .hero__visual-arrow {
+    appearance: none;
+    -webkit-appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.3rem;
+    height: 2.3rem;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    line-height: 1;
+    cursor: pointer;
+    transition: border-color 180ms ease, color 180ms ease, background-color 180ms ease;
+  }
+
+  .hero__visual-arrow:hover {
+    border-color: rgba(243, 231, 216, 0.24);
+    color: var(--text);
+  }
+
+  .hero__visual-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.7rem;
+    flex: 1;
+  }
+
+  .hero__visual-dot {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 0.52rem;
+    height: 0.52rem;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: var(--text-muted);
+    opacity: 0.45;
+    cursor: pointer;
+    transition: transform 180ms ease, opacity 180ms ease, background-color 180ms ease;
+  }
+
+  .hero__visual-dot.is-active {
+    background: var(--accent);
+    opacity: 1;
+    transform: scale(1.15);
+  }
+
+  .projects-grid,
+  .writing-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cta__panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+
+  .cta__actions {
+    display: grid;
+    gap: 1.25rem;
+    align-content: start;
+  }
+
+  .projects-grid {
+    padding: 1px;
+  }
+
+  .writing-grid {
+    padding: 1px;
+  }
+
+  @media (max-width: 900px) {
+    .hero,
+    .cta__panel,
+    .projects-grid,
+    .writing-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .hero {
+      grid-template-columns: 1fr;
+      padding-top: 2rem;
+    }
+
+    .hero__copy {
+      padding-top: 0;
+    }
+
+    .hero__visual-controls {
+      min-height: 3.75rem;
+      padding: 0 0.8rem;
+    }
+  }
+</style>

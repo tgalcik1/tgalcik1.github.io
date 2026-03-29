@@ -1,9 +1,15 @@
-// @ts-check
 import { defineConfig } from "astro/config";
 import react from "@astrojs/react";
-import tailwind from "@astrojs/tailwind";
+import mdx from "@astrojs/mdx";
+import sitemap from "@astrojs/sitemap";
 
 export default defineConfig({
   site: "https://tgalcik1.github.io",
-  integrations: [react(), tailwind()],
+  integrations: [react(), mdx(), sitemap()],
+  markdown: {
+    shikiConfig: {
+      theme: "github-dark",
+      wrap: true
+    }
+  }
 });

@@ -1,0 +1,137 @@
+---
+import NoiseFieldDemo from "./NoiseFieldDemo";
+---
+
+<div class="article-demo">
+  <div class="article-demo__header">
+    <div class="article-demo__dots" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <span>noise_field.glsl</span>
+    <span>live demo</span>
+  </div>
+  <div class="article-demo__canvas">
+    <NoiseFieldDemo client:load />
+  </div>
+</div>
+
+<style>
+  .article-demo {
+    margin: 2rem 0;
+    border: 1px solid var(--border);
+    background: var(--code-bg);
+  }
+
+  .article-demo__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 1rem;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .article-demo__header {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .article-demo__dots {
+    display: flex;
+    gap: 0.35rem;
+  }
+
+  .article-demo__dots span {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 999px;
+  }
+
+  .article-demo__dots span:first-child {
+    background: var(--window-dot-red);
+  }
+
+  .article-demo__dots span:nth-child(2) {
+    background: var(--window-dot-yellow);
+  }
+
+  .article-demo__dots span:nth-child(3) {
+    background: var(--window-dot-green);
+  }
+
+  .article-demo__canvas {
+    min-height: 19rem;
+  }
+
+  .article-demo__canvas :global(canvas) {
+    width: 100%;
+    height: 100%;
+  }
+
+  .article-demo__canvas :global(.noise-demo) {
+    display: grid;
+  }
+
+  .article-demo__canvas :global(.noise-demo__canvas) {
+    height: 19rem;
+  }
+
+  .article-demo__canvas :global(.noise-demo__controls) {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-top: 1px solid var(--border);
+  }
+
+  .article-demo__canvas :global(.noise-demo__control) {
+    display: grid;
+    gap: 0.6rem;
+    padding: 0.9rem 1rem 1rem;
+    border-right: 1px solid var(--border);
+  }
+
+  .article-demo__canvas :global(.noise-demo__control:last-child) {
+    border-right: 0;
+  }
+
+  .article-demo__canvas :global(.noise-demo__control span) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .article-demo__canvas :global(.noise-demo__control strong) {
+    color: var(--teal);
+    font-weight: 500;
+  }
+
+  .article-demo__canvas :global(.noise-demo__control input[type="range"]) {
+    width: 100%;
+    margin: 0;
+    accent-color: var(--teal);
+  }
+
+  @media (max-width: 720px) {
+    .article-demo__canvas :global(.noise-demo__controls) {
+      grid-template-columns: 1fr;
+    }
+
+    .article-demo__canvas :global(.noise-demo__control) {
+      border-right: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .article-demo__canvas :global(.noise-demo__control:last-child) {
+      border-bottom: 0;
+    }
+  }
+
+</style>
