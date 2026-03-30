@@ -78,7 +78,7 @@ const posts = (await getCollection("blog"))
       </div>
     </section>
 
-    <section id="projects" class="shell section-gap">
+    <!-- <section id="projects" class="shell section-gap">
       <div class="section-heading">
         <p class="eyebrow">Selected Work</p>
         <h2>Professional enough for product teams, expressive enough to still look like it came from a person.</h2>
@@ -87,16 +87,12 @@ const posts = (await getCollection("blog"))
       <div class="grid-border projects-grid panel">
         {featuredProjects.map((project) => <ProjectCard {...project} />)}
       </div>
-    </section>
+    </section> -->
 
     <section class="shell section-gap">
       <div class="section-heading">
         <p class="eyebrow">Writing</p>
-        <h2>Blog posts designed for code, experiments, and technical walkthroughs.</h2>
-        <p>
-          Astro plus MDX gives you room for polished writing, embedded React demos, and shader breakdowns without
-          turning the whole site into a JS-heavy app.
-        </p>
+        <h2>Technical breakdowns, shader experiments, implementation notes, and other thoughts about things I'm working on</h2>
       </div>
       <div class="grid-border writing-grid panel">
         {posts.map((post) => (
@@ -126,10 +122,6 @@ const posts = (await getCollection("blog"))
             <a class="button primary cta-link" href={`mailto:${site.email}`}>
               <SocialIcon kind="Email" />
               Email me
-            </a>
-            <a class="button secondary" href="https://github.com/tgalcik1" target="_blank" rel="noreferrer">
-              <SocialIcon kind="GitHub" />
-              GitHub
             </a>
           </div>
         </div>

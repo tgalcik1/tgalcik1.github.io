@@ -11,25 +11,24 @@ export const site = {
   heroLineB: "things",
   avatarPath: "/images/avatar.jpg",
   aboutImagePath: "/images/about.jpg",
-  bio: "Developer working across product engineering, graphics, and interactive experiments. I like shipping useful things that still have a point of view.",
+  bio: "Full stack, but with a soft spot for graphics work",
   aboutIntro:
     "I'm a developer interested in the overlap between product engineering, graphics, and systems that feel intentional in use.",
   aboutParagraphs: [
-    "A lot of the work I like sits between disciplines. I care about shipping useful software, but I also care about how it feels to move through, how clearly it communicates itself, and whether the visual decisions actually support the system underneath.",
-    "That usually means I end up working across product thinking, frontend implementation, realtime interaction, and visual experiments. Sometimes that turns into full-stack product work. Sometimes it becomes a shader study, a generative tool, or a technical write-up to understand something more deeply.",
-    "This site is meant to hold both sides of that work: the practical engineering side and the more exploratory graphics side. They are not really separate tracks for me.",
+    "Hi, I'm Tristan! I'm a developer based in Baltimore, Maryland. I have a background in full-stack product engineering, but I also have a strong interest in graphics programming, shader development, and just about anything that lets me explore visual ideas with code.",
+    "I started learning coding with game development in Unity, and found myself moreso drawn to the graphics and systems side of things than the gameplay scripting. I later went on to work in product engineering roles, but I still find myself drawn back to graphics experiments and visual projects in my free time.",
+    "This site is a place for me to share/document what I'm working on in my free time and write about the things I'm learning. Thanks for stopping by!",
   ] as const,
   aboutFacts: [
     { label: "Focus", value: "Product engineering, graphics, interaction" },
-    { label: "Stack", value: "TypeScript, React, Astro, WebGL" },
+    { label: "Stack", value: "Typescript, Python, Unity/Godot, HLSL, C#" },
     {
       label: "Interests",
-      value: "Shaders, design systems, tooling, live demos",
+      value: "Shaders, procedural generation, art, music",
     },
-    { label: "Based", value: "United States" },
+    { label: "Based", value: "Baltimore, MD" },
   ] as const,
   socialLinks: [
-    { label: "GitHub", href: "https://github.com/tgalcik1" },
     { label: "LinkedIn", href: "https://www.linkedin.com" },
     { label: "Email", href: "mailto:hello@tristangalcik.com" },
   ] as const,
