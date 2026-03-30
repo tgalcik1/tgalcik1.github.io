@@ -1,0 +1,42 @@
+---
+import Note from "./Note.astro";
+---
+
+<Note variant="secondary">
+  <div class="segment-map-note">
+    <img
+      src="/images/segments/grid.png"
+      alt="8 by 8 segment map texture"
+      class="segment-map-note__image"
+    />
+    <p class="segment-map-note__text">
+      This example uses a simple 8x8 grid of segment IDs. You can make interesting effects with other patterns; for example, brick using offset rows, or stones using Voronoi cells.
+    </p>
+  </div>
+</Note>
+
+<style>
+  .segment-map-note {
+    display: grid;
+    grid-template-columns: 8rem minmax(0, 1fr);
+    align-items: center;
+    gap: 1.35rem;
+  }
+
+  .segment-map-note__image {
+    display: block;
+    width: 8rem;
+    image-rendering: pixelated;
+  }
+
+  .segment-map-note__text {
+    margin: 0;
+    min-width: 0;
+  }
+
+  @media (max-width: 640px) {
+    .segment-map-note {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

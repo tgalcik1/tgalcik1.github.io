@@ -1,0 +1,56 @@
+---
+interface Props {
+  variant?: "primary" | "secondary" | "neutral";
+  title?: string;
+}
+
+const { variant = "primary", title } = Astro.props;
+---
+
+<aside class={`note note--${variant}`}>
+  {title && <div class="note__title">{title}</div>}
+  <div class="note__body">
+    <slot />
+  </div>
+</aside>
+
+<style>
+  .note {
+    margin: 0 0 1.3rem;
+    padding: 1rem 1.15rem;
+    border: 1px solid var(--note-border);
+    border-left-width: 2px;
+    background: var(--note-bg);
+    color: var(--note-text);
+  }
+
+  .note--primary {
+    --note-border: var(--accent);
+    --note-bg: color-mix(in srgb, var(--accent) 10%, transparent);
+    --note-text: var(--text-soft);
+  }
+
+  .note--secondary {
+    --note-border: color-mix(in srgb, var(--text-muted) 45%, white 10%);
+    --note-bg: color-mix(in srgb, var(--code-bg) 72%, white 2%);
+    --note-text: var(--text-soft);
+  }
+
+  .note--neutral {
+    --note-border: var(--border);
+    --note-bg: color-mix(in srgb, var(--panel-bg) 78%, black 8%);
+    --note-text: var(--text-soft);
+  }
+
+  .note__title {
+    margin: 0 0 0.35rem;
+    color: var(--text);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .note__body :global(p) {
+    margin: 0;
+  }
+</style>

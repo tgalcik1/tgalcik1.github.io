@@ -1,0 +1,182 @@
+---
+slug: 3d-pixel-art-outlines
+title: 3D pixel art outlines
+description: Creating pixel-perfect outlines and edge highlights using sobel filtering
+publishedAt: 2026-03-29
+readTime: 20 min read
+category: Shaders
+featured: true
+accent: teal
+---
+
+import CodeWindow from "../../components/CodeWindow.astro";
+import ArticlePixelArtBuffers from "../../components/ArticlePixelArtBuffers.astro";
+import ArticleDepthEdgeBuffer from "../../components/ArticleDepthEdgeBuffer.astro";
+import ArticleNormalEdgeBuffer from "../../components/ArticleNormalEdgeBuffer.astro";
+import ArticleBlendPreview from "../../components/ArticleBlendPreview.astro";
+import ArticleObjectIdBuffer from "../../components/ArticleObjectIdBuffer.astro";
+import ArticleObjectIdSilhouettes from "../../components/ArticleObjectIdSilhouettes.astro";
+import ArticleObjectIdDepthCompare from "../../components/ArticleObjectIdDepthCompare.astro";
+import ArticleAugmentedBlendPreview from "../../components/ArticleAugmentedBlendPreview.astro";
+import ArticleSegmentBuffer from "../../components/ArticleSegmentBuffer.astro";
+import ArticleSegmentOutlineMask from "../../components/ArticleSegmentOutlineMask.astro";
+import ArticleSegmentIndentedNormals from "../../components/ArticleSegmentIndentedNormals.astro";
+import ArticleSegmentIndentedNormalsLit from "../../components/ArticleSegmentIndentedNormalsLit.astro";
+import ArticleSegmentCellBevel from "../../components/ArticleSegmentCellBevel.astro";
+import ArticleCombinedOutlineMask from "../../components/ArticleCombinedOutlineMask.astro";
+import Note from "../../components/Note.astro";
+import SegmentMapNote from "../../components/SegmentMapNote.astro";
+
+One of the defining characteristics of traditional pixel art is crisp, single-pixel wide outlines. When trying to achieve this effect with 3D geometry, simple outline methods like the <a href="https://bnpr.gitbook.io/bnpr/outline/inverse-hull-method" target="_blank" rel="noreferrer">inverse-hull method</a> lead to outlines with varying pixel widths, which doesn't lend will to the pixel art aesthetic.
+
+Instead, we can leverage Sobel filtering on various buffers using screen coordinates to get the nice single-pixel crisp highlights we're after. This has quickly become the standard for 3d pixel art outlines, popularized by creators like <a href="https://imgur.com/gallery/creating-pixel-art-scene-realtime-3d-qwhbHQq" target="_blank" rel="noreferrer">t3ssel8r</a> and others.
+
+Others have already covered using the depth and normals buffers for edge detection, so I intentionally will keep that area brief in this writeup. Instead, I'll be detailing some related techniques I use in combination with these to push the effect a bit further.
+
+# Depth-normals edge detection
+
+This part might be a bit of recap if you've already looked into 3d pixel art outlines before. The idea here is to sample a neighborhood pixels in the depth and normals textures, compare depth/normal differences, and draw outlines when these differences surpass some threshold. The idea is quite simple, but I've found tuning these thresholds to be the finnicky part.
+
+<ArticlePixelArtBuffers />
+
+Depth edge detection would look something like:
+
+<CodeWindow title="Depth Edge Detection" language="HLSL (pseudocode)">
+
+```hlsl
+// center depth
+float d_c = texture(DEPTH_TEXTURE, screenUV);
+
+// neighbor depths
+float d_t = texture(DEPTH_TEXTURE, screenUV + vec2(0,  1) * texelSize);
+float d_b = texture(DEPTH_TEXTURE, screenUV + vec2(0, -1) * texelSize);
+float d_l = texture(DEPTH_TEXTURE, screenUV + vec2(-1, 0) * texelSize);
+float d_r = texture(DEPTH_TEXTURE, screenUV + vec2( 1, 0) * texelSize);
+
+// compare neighbors against center
+float delta_t = d_t - d_c;
+float delta_b = d_b - d_c;
+float delta_l = d_l - d_c;
+float delta_r = d_r - d_c;
+
+// only let the nearer side of the discontinuity draw the edge
+float edge_t = step(DEPTH_THRESHOLD, abs(delta_t)) * step(delta_t, 0.0);
+float edge_b = step(DEPTH_THRESHOLD, abs(delta_b)) * step(delta_b, 0.0);
+float edge_l = step(DEPTH_THRESHOLD, abs(delta_l)) * step(delta_l, 0.0);
+float edge_r = step(DEPTH_THRESHOLD, abs(delta_r)) * step(delta_r, 0.0);
+
+float depth_edge = max(max(edge_t, edge_b), max(edge_l, edge_r));
+float3 preview = float3(depth_edge, 0.0, 0.0);
+```
+
+</CodeWindow>
+
+We can visualize our depth edges in red:
+
+<ArticleDepthEdgeBuffer />
+
+Similarly, we can detect differences in the normals buffer to get interior edges. Below shows depth differences in red, and now normal differences in green:
+
+<ArticleNormalEdgeBuffer />
+
+Now, we can blend this mask into our scene. You can get creative here - for example, set different colors per mask channel so depth outlines get darkened, and interior normal edges get brightened, or use the mask to brighten/darken the original pixel's scene color using light attenuation.
+
+If you are doing your edge detection per-renderer instead of in a fullscreen pass, you can get really detailed with things like outline colors, intensities, etc., but for now, let's stick with a simple light attenuation blend. We will darken our mask in shade, and brighten in light.
+
+That blend looks like this:
+
+<ArticleBlendPreview />
+
+This approach works well and gives pretty convincing results. However, there are some strange artifacts visible where geometry intersects; taking a look at the cubes intersecting the plane, there's a visible bulge. That happens because the depth difference across those pixels is still too small to pass our depth threshold, so the intersection is not classified as a depth edge. Instead, it's treated as an internal normal change, and since depth-edge ownership is ambiguous around those nearly equal depth samples, the normal edge ends up looking a bit swollen.
+
+We could try to keep fighting this with more robust ownership checks and thresholding, but what we really want for silhouettes is a buffer that tells us when one rendered object ends and another begins, regardless of how similar their depth or surface orientation is. This is where an <b>object ID buffer</b> is useful.
+
+# Object ID silhouettes
+
+An object ID buffer stores a flat identifier per renderer. When two neighboring pixels have different IDs, we know we crossed an object boundary.
+
+The exact implementation of this buffer varies depending on the engine being used. In Unity, a custom render pass is a clean apporach. I would recommend an `R16F` target for scenes containing large counts of renderers in order to avoid ID collisions.
+
+A simple way to assign IDs is to derive them from object data like world-space object position. This can work well, but has some tradeoffs:
+
+1. dynamic objects will not have a stable ID as their world-space object position hashes differently during translation, and
+2. separate renderers occupying the same position can collapse to the same ID.
+
+In some cases, this is acceptable, but isn't particularly robust.
+
+A CPU-side assignemnt scheme allows for much more control. Instead of deriving object IDs implicitly, you can decide exactly how objects should be grouped. This makes it possible to treat a cluster of renderers as one silhouette object, or to split everything into distinct IDs when you want finer control.
+
+In Godot, I handled this by forking the engine and adding explicit outline-group support on `MeshInstance3D`, along with a dedicated backbuffer for the object ID texture. If you are building your own renderer, this becomes much simpler conceptually. You can decide exactly when this object ID prepass runs, how the IDs are authored, how objects are grouped, and how the result is fed into later passes.
+
+Let's take a look at what an object ID buffer would look like:
+
+<ArticleObjectIdBuffer />
+
+<Note variant="secondary" title="Note">
+  I've intentionally widened the scalar spacing between object IDs in this
+  example so the buffer is easier to read at a glance.
+</Note>
+
+Now, we can detect discontinuities in the object ID buffer for silhouettes. The ID buffer tells us that a boundary exists, and the depth buffer tells us which side should own it. In practice, that means we get cleaner one-pixel silhouettes, especially at contact points where depth and normal edges tend to get messy.
+
+<ArticleObjectIdSilhouettes />
+
+Things look good so far. However, if we only use object IDs, we lose internal depth differences within individual objects. To resolve this, we can augment our object ID silhouettes with our previous depth silhouettes.
+
+<ArticleObjectIdDepthCompare />
+
+We can fold these in with our existing normal edges, resulting in clean, crisp outlines. The difference is subtle, but in my opinion noticeable enough to warrant a little bit of extra render target memory.
+
+<ArticleAugmentedBlendPreview />
+
+# Segment highlights
+
+The last bit of detail we can add in is "segment" highlights. I read about this from <a href="https://starbi.dev/#empty-spaces" target="_blank" rel="noreferrer">starbi's amazing writeup</a> on a 3D recreation of a pixel art piece. They explained a clever approach to achieving "pixel-perfect lines on mesh surfaces", calling it <b>segment edge detection</b>.
+
+The idea is similar to the object ID buffer described above. With segment edge detection, instead of assigning a unique ID per renderer, we can author textures (I will refer to them as <b>segment maps</b>) containing identifiers for distinct surface segments within an area.
+
+<SegmentMapNote />
+
+We can have our shaders write to another prepass, this time using the mesh's UVs to sample the segment map, and writing the raw segment cell IDs to a segment buffer.
+
+<ArticleSegmentBuffer />
+
+Just like all of our other edge detection approaches above, we can determine discontinuities in neighboring pixels' segment cell IDs, resulting in pixel-perfect lines within our objects. In order to avoid false segment edge classification where cell IDs are reused across different objects, we also constrain segment comparisons to pixels that belong to the same object ID.
+
+<ArticleSegmentOutlineMask />
+
+Below is our combined mask at this point:
+
+<ArticleCombinedOutlineMask />
+
+Starbi also describes optionally "generating indented normals along the line". This is a nice-looking effect where segment edges appear to get a sort of "bevel" along the edge. To do this, we can first inset our segment edges:
+
+<CodeWindow title="Segment Inset" language="HLSL (pseudocode)">
+
+```hlsl
+// raw segment edge values
+float segment_c = SegmentMask(screenUV);
+float segment_l = SegmentMask(screenUV + float2(-1,  0) * texelSize);
+float segment_r = SegmentMask(screenUV + float2( 1,  0) * texelSize);
+float segment_u = SegmentMask(screenUV + float2( 0,  1) * texelSize);
+float segment_d = SegmentMask(screenUV + float2( 0, -1) * texelSize);
+
+// any non-line pixel directly adjacent to a segment line becomes the inset
+float inset = (1.0 - segment_c) * max(
+    max(segment_l, segment_r),
+    max(segment_u, segment_d)
+);
+
+// blue = segment line, magenta = inset
+float3 debug = float3(inset, 0.0, max(segment_c, inset));
+```
+
+</CodeWindow>
+
+<ArticleSegmentCellBevel />
+
+<ArticleSegmentIndentedNormals />
+
+<ArticleSegmentIndentedNormalsLit />
+
+Now that we have the segment inset mask, we want to choose which "side" of the inset mask to use for our indented normal. We will use the surface normal and light direction

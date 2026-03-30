@@ -1,0 +1,143 @@
+---
+import ObjectIdDepthCompare from "./ObjectIdDepthCompare";
+---
+
+<div class="pixel-buffer-article">
+  <div class="pixel-buffer-article__header">
+    <div class="pixel-buffer-article__dots" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <span>Object ID + Internal Depth</span>
+    <span>live compare</span>
+  </div>
+  <div class="pixel-buffer-article__body">
+    <ObjectIdDepthCompare client:load />
+  </div>
+</div>
+
+<style>
+  .pixel-buffer-article {
+    margin: 2rem 0;
+    border: 1px solid var(--border);
+    background: var(--code-bg);
+  }
+
+  .pixel-buffer-article__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .pixel-buffer-article__dots {
+    display: flex;
+    gap: 0.35rem;
+  }
+
+  .pixel-buffer-article__dots span {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 999px;
+  }
+
+  .pixel-buffer-article__dots span:first-child {
+    background: var(--window-dot-red);
+  }
+
+  .pixel-buffer-article__dots span:nth-child(2) {
+    background: var(--window-dot-yellow);
+  }
+
+  .pixel-buffer-article__dots span:nth-child(3) {
+    background: var(--window-dot-green);
+  }
+
+  .pixel-buffer-article__body {
+    padding: 0;
+  }
+
+  .pixel-buffer-article__body :global(.silhouette-compare) {
+    position: relative;
+    background: #000;
+    user-select: none;
+  }
+
+  .pixel-buffer-article__body :global(.silhouette-compare__viewport) {
+    height: 18rem;
+    background: #000;
+    cursor: ew-resize;
+  }
+
+  .pixel-buffer-article__body :global(.silhouette-compare__viewport canvas) {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .pixel-buffer-article__body :global(.silhouette-compare__divider) {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.55);
+    transform: translateX(-0.5px);
+    pointer-events: none;
+  }
+
+  .pixel-buffer-article__body :global(.silhouette-compare__handle) {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: rgba(11, 15, 21, 0.92);
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04);
+  }
+
+  .pixel-buffer-article__body :global(.silhouette-compare__handle::before),
+  .pixel-buffer-article__body :global(.silhouette-compare__handle::after) {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 0.45rem;
+    height: 0.45rem;
+    border-top: 1px solid var(--text-muted);
+    border-right: 1px solid var(--text-muted);
+  }
+
+  .pixel-buffer-article__body :global(.silhouette-compare__handle::before) {
+    left: 0.52rem;
+    transform: translateY(-50%) rotate(225deg);
+  }
+
+  .pixel-buffer-article__body :global(.silhouette-compare__handle::after) {
+    right: 0.52rem;
+    transform: translateY(-50%) rotate(45deg);
+  }
+
+  .pixel-buffer-article__body :global(.silhouette-compare__labels) {
+    position: absolute;
+    top: 0.85rem;
+    left: 0.85rem;
+    right: 0.85rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 0.66rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
+</style>
