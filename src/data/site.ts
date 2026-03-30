@@ -11,7 +11,7 @@ export const site = {
   heroLineB: "things",
   avatarPath: "/images/avatar.jpg",
   aboutImagePath: "/images/about.jpg",
-  bio: "Full stack, but with a soft spot for graphics work",
+  bio: "Full stack, but with a soft spot for graphics",
   aboutIntro:
     "I'm a developer interested in the overlap between product engineering, graphics, and systems that feel intentional in use.",
   aboutParagraphs: [
@@ -29,7 +29,9 @@ export const site = {
     { label: "Based", value: "Baltimore, MD" },
   ] as const,
   socialLinks: [
-    { label: "LinkedIn", href: "https://www.linkedin.com" },
+    // { label: "LinkedIn", href: "https://www.linkedin.com" },
+    // { label: "GitHub", href: "https://github.com/tgalcik1" },
+    { label: "YouTube", href: "https://www.youtube.com/@tristangamedev" },
     { label: "Email", href: "mailto:hello@tristangalcik.com" },
   ] as const,
 };

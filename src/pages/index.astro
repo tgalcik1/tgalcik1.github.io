@@ -30,12 +30,17 @@ const posts = (await getCollection("blog"))
           </h1>
           <p class="hero__lede">{site.bio}</p>
           <div class="button-row">
-            <a class="button primary" href="#projects">See selected work</a>
-            <a class="button secondary" href="/blog">Read the blog</a>
+            <div class="disabled-cta">
+              <span class="button primary is-disabled" aria-disabled="true" tabindex="0">
+                See selected work
+              </span>
+              <span class="disabled-cta__tooltip" role="tooltip">Coming soon</span>
+            </div>
+            <a class="button secondary" href="/blog">Read more</a>
           </div>
         </div>
 
-        <div class="hero__visual panel">
+        <!-- <div class="hero__visual panel">
           <div class="hero__visual-main" data-demo-carousel data-demo-chrome="none">
             <div class="hero__demo is-active" data-demo-slide data-demo-chrome="none">
               <PixelatedStudy client:load />
@@ -75,7 +80,7 @@ const posts = (await getCollection("blog"))
             </div>
           </div>
         </div>
-      </div>
+      </div> -->
     </section>
 
     <!-- <section id="projects" class="shell section-gap">
@@ -222,6 +227,39 @@ const posts = (await getCollection("blog"))
     max-width: 34rem;
     margin: 1.5rem 0 2rem;
     font-size: 0.95rem;
+  }
+
+  .disabled-cta {
+    position: relative;
+    display: inline-block;
+    isolation: isolate;
+  }
+
+  .disabled-cta__tooltip {
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 0.5rem);
+    transform: translateX(-50%) translateY(-0.2rem);
+    padding: 0.4rem 0.55rem;
+    border: 1px solid var(--border);
+    background: var(--code-bg);
+    color: var(--text);
+    font-size: 0.66rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 160ms ease, transform 160ms ease;
+    z-index: 3;
+  }
+
+  .disabled-cta:hover .disabled-cta__tooltip,
+  .disabled-cta:focus-within .disabled-cta__tooltip {
+    visibility: visible;
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
   }
 
   .hero__visual {

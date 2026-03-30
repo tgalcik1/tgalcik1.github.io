@@ -82,6 +82,8 @@ const BLEND_VIEW_MODES: ViewMode[] = ["blend"];
 const SEGMENT_TEXTURE_STORAGE_KEY = "pixel-art-segment-texture";
 const SEGMENT_TEXTURE_EVENT = "pixel-art-segment-texture-change";
 const generatedSegmentFieldCache = new Map<string, THREE.DataTexture>();
+const segmentScalarTextureCache = new Map<string, THREE.Texture>();
+const repeatedSegmentFieldTextureCache = new Map<string, THREE.Texture>();
 const PIXEL_SCALE = 2;
 const DEPTH_EDGE_THRESHOLD = 0.01;
 const NORMAL_EDGE_THRESHOLD = 0.15;
@@ -282,6 +284,12 @@ export default function PixelArtBufferViews({ mode = "full" }: Props) {
       return texture;
     };
     const scalarTexture = (path: string, repeatX = 1, repeatY = 1) => {
+      const key = `${path}:${repeatX}:${repeatY}`;
+      const cachedTexture = segmentScalarTextureCache.get(key);
+      if (cachedTexture) {
+        return cachedTexture;
+      }
+
       const texture = textureLoader.load(path);
       texture.minFilter = THREE.NearestFilter;
       texture.magFilter = THREE.NearestFilter;
@@ -290,6 +298,7 @@ export default function PixelArtBufferViews({ mode = "full" }: Props) {
       texture.wrapT = THREE.RepeatWrapping;
       texture.repeat.set(repeatX, repeatY);
       texture.colorSpace = THREE.NoColorSpace;
+      segmentScalarTextureCache.set(key, texture);
       return texture;
     };
     const generatedSegmentFieldTexture = (path: string) => {
@@ -577,6 +586,7 @@ export default function PixelArtBufferViews({ mode = "full" }: Props) {
         mount: HTMLDivElement;
         renderer: THREE.WebGLRenderer;
         camera: THREE.OrthographicCamera;
+        displayTarget: THREE.WebGLRenderTarget;
       }
     >();
 
@@ -589,6 +599,7 @@ export default function PixelArtBufferViews({ mode = "full" }: Props) {
     });
     const postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     const postScene = new THREE.Scene();
+    const upscaleScene = new THREE.Scene();
     const depthEdgeMaterial = new THREE.ShaderMaterial({
       uniforms: {
         tDepth: { value: null },
@@ -1869,6 +1880,57 @@ export default function PixelArtBufferViews({ mode = "full" }: Props) {
       depthEdgeMaterial,
     );
     postScene.add(postQuad);
+    const upscaleMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        tInput: { value: null },
+        textureSize: { value: new THREE.Vector2(1, 1) },
+        encodeSrgb: { value: 0 },
+      },
+      extensions: {
+        derivatives: true,
+      },
+      vertexShader: `
+        varying vec2 vUv;
+
+        void main() {
+          vUv = uv;
+          gl_Position = vec4(position.xy, 0.0, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D tInput;
+        uniform vec2 textureSize;
+        uniform float encodeSrgb;
+
+        varying vec2 vUv;
+
+        vec3 linearToSrgb(vec3 color) {
+          vec3 cutoff = step(vec3(0.0031308), color);
+          vec3 lower = color * 12.92;
+          vec3 higher = 1.055 * pow(max(color, vec3(0.0)), vec3(1.0 / 2.4)) - 0.055;
+          return mix(lower, higher, cutoff);
+        }
+
+        void main() {
+          vec2 boxSize = clamp(fwidth(vUv) * textureSize, 0.00001, 1.0);
+          vec2 tx = vUv * textureSize - 0.5 * boxSize;
+          vec2 txOffset = smoothstep(vec2(1.0) - boxSize, vec2(1.0), fract(tx));
+          vec2 sampleUv = (floor(tx) + 0.5 + txOffset) / textureSize;
+          vec4 color = texture2D(tInput, sampleUv);
+          vec3 outputColor = mix(
+            color.rgb,
+            linearToSrgb(color.rgb),
+            step(0.5, encodeSrgb)
+          );
+          gl_FragColor = vec4(outputColor, color.a);
+        }
+      `,
+    });
+    const upscaleQuad = new THREE.Mesh(
+      new THREE.PlaneGeometry(2, 2),
+      upscaleMaterial,
+    );
+    upscaleScene.add(upscaleQuad);
     const objectIdEntries: Array<{
       mesh: THREE.Mesh;
       material: THREE.Material | THREE.Material[];
@@ -1941,8 +2003,19 @@ export default function PixelArtBufferViews({ mode = "full" }: Props) {
       mount.appendChild(renderer.domElement);
       renderer.domElement.style.width = "100%";
       renderer.domElement.style.height = "100%";
-      renderer.domElement.style.imageRendering = "pixelated";
       return renderer;
+    };
+
+    const presentUpscaled = (
+      renderer: THREE.WebGLRenderer,
+      target: THREE.WebGLRenderTarget,
+      encodeSrgb: boolean,
+    ) => {
+      upscaleMaterial.uniforms.tInput.value = target.texture;
+      upscaleMaterial.uniforms.textureSize.value.set(target.width, target.height);
+      upscaleMaterial.uniforms.encodeSrgb.value = encodeSrgb ? 1 : 0;
+      renderer.setRenderTarget(null);
+      renderer.render(upscaleScene, postCamera);
     };
 
     const voxelMaterial = new THREE.MeshStandardMaterial({
@@ -1986,23 +2059,29 @@ export default function PixelArtBufferViews({ mode = "full" }: Props) {
     const segmentDisabledMaterial = new THREE.MeshBasicMaterial({
       color: "#000000",
     });
-    const segmentFieldTextures: THREE.Texture[] = [];
 
     const createSegmentFieldMaterial = (
-      fieldTexture: THREE.Texture,
+      fieldTexturePath: string,
       repeatX: number,
       repeatY: number,
     ) => {
-      const repeatedFieldTexture = fieldTexture.clone();
-      repeatedFieldTexture.minFilter = THREE.LinearFilter;
-      repeatedFieldTexture.magFilter = THREE.LinearFilter;
-      repeatedFieldTexture.generateMipmaps = false;
-      repeatedFieldTexture.wrapS = THREE.RepeatWrapping;
-      repeatedFieldTexture.wrapT = THREE.RepeatWrapping;
-      repeatedFieldTexture.repeat.set(repeatX, repeatY);
-      repeatedFieldTexture.colorSpace = THREE.NoColorSpace;
-      repeatedFieldTexture.needsUpdate = true;
-      segmentFieldTextures.push(repeatedFieldTexture);
+      const textureKey = `${fieldTexturePath}:${repeatX}:${repeatY}`;
+      let repeatedFieldTexture =
+        repeatedSegmentFieldTextureCache.get(textureKey);
+
+      if (!repeatedFieldTexture) {
+        repeatedFieldTexture = generatedSegmentFieldTexture(fieldTexturePath);
+        repeatedFieldTexture = repeatedFieldTexture.clone();
+        repeatedFieldTexture.minFilter = THREE.LinearFilter;
+        repeatedFieldTexture.magFilter = THREE.LinearFilter;
+        repeatedFieldTexture.generateMipmaps = false;
+        repeatedFieldTexture.wrapS = THREE.RepeatWrapping;
+        repeatedFieldTexture.wrapT = THREE.RepeatWrapping;
+        repeatedFieldTexture.repeat.set(repeatX, repeatY);
+        repeatedFieldTexture.colorSpace = THREE.NoColorSpace;
+        repeatedFieldTexture.needsUpdate = true;
+        repeatedSegmentFieldTextureCache.set(textureKey, repeatedFieldTexture);
+      }
 
       return new THREE.MeshBasicMaterial({
         map: repeatedFieldTexture,
@@ -2077,17 +2156,17 @@ export default function PixelArtBufferViews({ mode = "full" }: Props) {
       2 * segmentRepeatScale,
     );
     const segmentPedestalFieldMaterial = createSegmentFieldMaterial(
-      segmentBevelFieldTexture,
+      selectedSegmentTexture.path,
       4 * segmentRepeatScale,
       4 * segmentRepeatScale,
     );
     const segmentFloorFieldMaterial = createSegmentFieldMaterial(
-      segmentBevelFieldTexture,
+      selectedSegmentTexture.path,
       7 * segmentRepeatScale,
       7 * segmentRepeatScale,
     );
     const segmentPillarFieldMaterial = createSegmentFieldMaterial(
-      segmentBevelFieldTexture,
+      selectedSegmentTexture.path,
       2 * segmentRepeatScale,
       2 * segmentRepeatScale,
     );
@@ -2176,7 +2255,7 @@ export default function PixelArtBufferViews({ mode = "full" }: Props) {
     objectIdEntries.push({
       mesh: floor,
       material: floor.material,
-      objectIdMaterial: new THREE.MeshBasicMaterial({ color: "#111111" }),
+      objectIdMaterial: new THREE.MeshBasicMaterial({ color: "#4a4a4a" }),
     });
     segmentEntries.push({
       mesh: floor,
@@ -2341,12 +2420,16 @@ export default function PixelArtBufferViews({ mode = "full" }: Props) {
 
       const renderer = createRenderer(mount);
       const camera = new THREE.OrthographicCamera();
+      const displayTarget = new THREE.WebGLRenderTarget(1, 1);
+      displayTarget.texture.minFilter = THREE.LinearFilter;
+      displayTarget.texture.magFilter = THREE.LinearFilter;
+      displayTarget.texture.generateMipmaps = false;
 
       configureCamera(camera, mount.clientWidth, mount.clientHeight);
 
       renderers.set(activeMode, renderer);
       cameras.set(activeMode, camera);
-      resizeEntries.set(activeMode, { mount, renderer, camera });
+      resizeEntries.set(activeMode, { mount, renderer, camera, displayTarget });
 
       if (activeMode === "depthEdges") {
         const depthTexture = new THREE.DepthTexture(1, 1);
@@ -2580,14 +2663,18 @@ export default function PixelArtBufferViews({ mode = "full" }: Props) {
     });
 
     const resize = () => {
-      resizeEntries.forEach(({ mount, renderer, camera }) => {
+      resizeEntries.forEach(({ mount, renderer, camera, displayTarget }) => {
         const width = Math.max(mount.clientWidth, 1);
         const height = Math.max(mount.clientHeight, 1);
+        const devicePixelRatio = window.devicePixelRatio || 1;
+        const displayWidth = Math.max(1, Math.round(width * devicePixelRatio));
+        const displayHeight = Math.max(1, Math.round(height * devicePixelRatio));
         const renderWidth = Math.max(1, Math.round(width / PIXEL_SCALE));
         const renderHeight = Math.max(1, Math.round(height / PIXEL_SCALE));
 
         configureCamera(camera, width, height);
-        renderer.setSize(renderWidth, renderHeight, false);
+        renderer.setSize(displayWidth, displayHeight, false);
+        displayTarget.setSize(renderWidth, renderHeight);
 
         if (
           mount === mounts.depthEdges ||
@@ -2736,21 +2823,43 @@ export default function PixelArtBufferViews({ mode = "full" }: Props) {
       renderer: THREE.WebGLRenderer,
       camera: THREE.OrthographicCamera,
     ) => {
+      const entry = resizeEntries.get(mode);
+      const outputTarget = entry?.displayTarget;
+      if (!outputTarget) return;
+
       if (mode === "color") {
         scene.overrideMaterial = null;
+        renderer.setRenderTarget(outputTarget);
         renderer.render(scene, camera);
+        renderer.setRenderTarget(null);
+        presentUpscaled(renderer, outputTarget, true);
       } else if (mode === "depth") {
         scene.overrideMaterial = depthMaterial;
+        renderer.setRenderTarget(outputTarget);
         renderer.render(scene, camera);
+        renderer.setRenderTarget(null);
+        presentUpscaled(renderer, outputTarget, false);
       } else if (mode === "normals") {
         scene.overrideMaterial = normalMaterial;
+        renderer.setRenderTarget(outputTarget);
         renderer.render(scene, camera);
+        renderer.setRenderTarget(null);
+        presentUpscaled(renderer, outputTarget, false);
       } else if (mode === "objectIds") {
+        renderer.setRenderTarget(outputTarget);
         renderObjectIds(renderer, camera);
+        renderer.setRenderTarget(null);
+        presentUpscaled(renderer, outputTarget, false);
       } else if (mode === "segments") {
+        renderer.setRenderTarget(outputTarget);
         renderSegments(renderer, camera);
+        renderer.setRenderTarget(null);
+        presentUpscaled(renderer, outputTarget, false);
       } else if (mode === "segmentCellBevel") {
+        renderer.setRenderTarget(outputTarget);
         renderSegmentBevel(renderer, camera);
+        renderer.setRenderTarget(null);
+        presentUpscaled(renderer, outputTarget, true);
       } else {
         if (
           mode === "blend" ||
@@ -2863,7 +2972,10 @@ export default function PixelArtBufferViews({ mode = "full" }: Props) {
             );
           }
 
+          renderer.setRenderTarget(outputTarget);
           renderer.render(postScene, postCamera);
+          renderer.setRenderTarget(null);
+          presentUpscaled(renderer, outputTarget, false);
           return;
         }
 
@@ -3001,7 +3113,10 @@ export default function PixelArtBufferViews({ mode = "full" }: Props) {
           );
         }
 
+        renderer.setRenderTarget(outputTarget);
         renderer.render(postScene, postCamera);
+        renderer.setRenderTarget(null);
+        presentUpscaled(renderer, outputTarget, false);
       }
     };
 
@@ -3095,7 +3210,9 @@ export default function PixelArtBufferViews({ mode = "full" }: Props) {
 
       renderers.forEach((renderer, mode) => {
         const mount = mounts[mode];
+        const displayTarget = resizeEntries.get(mode)?.displayTarget;
         renderer.dispose();
+        displayTarget?.dispose();
         if (mount?.contains(renderer.domElement)) {
           mount.removeChild(renderer.domElement);
         }
@@ -3109,6 +3226,8 @@ export default function PixelArtBufferViews({ mode = "full" }: Props) {
       segmentEdgeMaterial.dispose();
       segmentAxesMaterial.dispose();
       segmentIndentedMaterial.dispose();
+      upscaleMaterial.dispose();
+      upscaleQuad.geometry.dispose();
       segmentIndentedLitMaterial.dispose();
       combinedMaskMaterial.dispose();
       augmentedBlendMaterial.dispose();
@@ -3140,7 +3259,6 @@ export default function PixelArtBufferViews({ mode = "full" }: Props) {
       segmentPedestalTexture.dispose();
       segmentFloorTexture.dispose();
       segmentPillarTexture.dispose();
-      segmentFieldTextures.forEach((texture) => texture.dispose());
       objectIdEntries.forEach(({ objectIdMaterial }) => {
         if (Array.isArray(objectIdMaterial)) {
           objectIdMaterial.forEach((material) => material.dispose());

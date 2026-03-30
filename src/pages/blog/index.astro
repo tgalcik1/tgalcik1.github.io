@@ -22,7 +22,7 @@ const posts = (await getCollection("blog")).sort(
     </section>
 
     <section class="section-gap">
-      <div class="grid-border blog-grid">
+      <div class="grid-border blog-grid panel">
         {posts.map((post) => (
           <PostPreviewCard
             href={`/blog/${post.data.slug}/`}

@@ -97,6 +97,7 @@ import PixelArtBufferViews from "./PixelArtBufferViews";
     min-width: fit-content;
     justify-self: end;
     margin: 0;
+    color-scheme: dark;
     appearance: none;
     padding: 0.45rem 0.55rem;
     border: 1px solid var(--border);
@@ -109,6 +110,11 @@ import PixelArtBufferViews from "./PixelArtBufferViews";
     text-align: center;
     text-align-last: center;
     text-transform: none;
+  }
+
+  .pixel-buffer-article__body :global(.pixel-buffer-demo__control select option) {
+    background: #11161d;
+    color: #f3e7d8;
   }
 
   .pixel-buffer-article__body :global(.pixel-buffer-demo__viewport) {

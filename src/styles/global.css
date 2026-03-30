@@ -151,6 +151,18 @@ p {
   transform: translateY(-1px);
 }
 
+.button[aria-disabled="true"],
+.button.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  user-select: none;
+}
+
+.button[aria-disabled="true"]:hover,
+.button.is-disabled:hover {
+  transform: none;
+}
+
 .button svg {
   display: block;
   transform: translateY(0.01em);
@@ -175,6 +187,27 @@ p {
 
 .card {
   background: var(--card-bg);
+}
+
+a.card,
+button.card,
+[role="button"].card {
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+a.card:hover,
+button.card:hover,
+[role="button"].card:hover,
+a.card:focus-visible,
+button.card:focus-visible,
+[role="button"].card:focus-visible {
+  transform: translateY(-2px);
+  background: var(--panel-bg);
+  box-shadow: var(--shadow);
 }
 
 .prose {

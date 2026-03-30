@@ -28,6 +28,7 @@ export default function ObjectIdDepthCompare() {
     const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 30);
     const postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     const postScene = new THREE.Scene();
+    const upscaleScene = new THREE.Scene();
 
     const renderer = new THREE.WebGLRenderer({
       antialias: false,
@@ -41,7 +42,6 @@ export default function ObjectIdDepthCompare() {
     mount.appendChild(renderer.domElement);
     renderer.domElement.style.width = "100%";
     renderer.domElement.style.height = "100%";
-    renderer.domElement.style.imageRendering = "pixelated";
 
     const objectIdEdgeMaterial = new THREE.ShaderMaterial({
       uniforms: {
@@ -203,6 +203,47 @@ export default function ObjectIdDepthCompare() {
     );
     postScene.add(postQuad);
 
+    const upscaleMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        tInput: { value: null },
+        textureSize: { value: new THREE.Vector2(1, 1) },
+      },
+      extensions: {
+        derivatives: true,
+      },
+      vertexShader: `
+        varying vec2 vUv;
+
+        void main() {
+          vUv = uv;
+          gl_Position = vec4(position.xy, 0.0, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D tInput;
+        uniform vec2 textureSize;
+
+        varying vec2 vUv;
+
+        void main() {
+          vec2 boxSize = clamp(fwidth(vUv) * textureSize, 0.00001, 1.0);
+          vec2 tx = vUv * textureSize - 0.5 * boxSize;
+          vec2 txOffset = smoothstep(vec2(1.0) - boxSize, vec2(1.0), fract(tx));
+          vec2 sampleUv = (floor(tx) + 0.5 + txOffset) / textureSize;
+          gl_FragColor = texture2D(tInput, sampleUv);
+        }
+      `,
+    });
+    const upscaleTarget = new THREE.WebGLRenderTarget(1, 1);
+    upscaleTarget.texture.minFilter = THREE.LinearFilter;
+    upscaleTarget.texture.magFilter = THREE.LinearFilter;
+    upscaleTarget.texture.generateMipmaps = false;
+    const upscaleQuad = new THREE.Mesh(
+      new THREE.PlaneGeometry(2, 2),
+      upscaleMaterial,
+    );
+    upscaleScene.add(upscaleQuad);
+
     const objectIdDepthTexture = new THREE.DepthTexture(1, 1);
     objectIdDepthTexture.minFilter = THREE.NearestFilter;
     objectIdDepthTexture.magFilter = THREE.NearestFilter;
@@ -327,17 +368,21 @@ export default function ObjectIdDepthCompare() {
     const resize = () => {
       const width = Math.max(mount.clientWidth, 1);
       const height = Math.max(mount.clientHeight, 1);
+      const devicePixelRatio = window.devicePixelRatio || 1;
+      const displayWidth = Math.max(1, Math.round(width * devicePixelRatio));
+      const displayHeight = Math.max(1, Math.round(height * devicePixelRatio));
       const renderWidth = Math.max(1, Math.round(width / PIXEL_SCALE));
       const renderHeight = Math.max(1, Math.round(height / PIXEL_SCALE));
 
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
-      renderer.setSize(renderWidth, renderHeight, false);
+      renderer.setSize(displayWidth, displayHeight, false);
 
       objectIdTarget.setSize(renderWidth, renderHeight);
       objectIdEdgeTarget.setSize(renderWidth, renderHeight);
       depthTarget.setSize(renderWidth, renderHeight);
       combinedEdgeTarget.setSize(renderWidth, renderHeight);
+      upscaleTarget.setSize(renderWidth, renderHeight);
     };
 
     const resizeObserver = new ResizeObserver(resize);
@@ -389,7 +434,16 @@ export default function ObjectIdDepthCompare() {
       postQuad.material = splitMaterial;
       splitMaterial.uniforms.tLeft.value = objectIdEdgeTarget.texture;
       splitMaterial.uniforms.tRight.value = combinedEdgeTarget.texture;
+      renderer.setRenderTarget(upscaleTarget);
       renderer.render(postScene, postCamera);
+      renderer.setRenderTarget(null);
+
+      upscaleMaterial.uniforms.tInput.value = upscaleTarget.texture;
+      upscaleMaterial.uniforms.textureSize.value.set(
+        upscaleTarget.width,
+        upscaleTarget.height,
+      );
+      renderer.render(upscaleScene, postCamera);
     };
 
     const visibilityObserver = new IntersectionObserver(
@@ -443,7 +497,10 @@ export default function ObjectIdDepthCompare() {
       objectIdEdgeMaterial.dispose();
       internalDepthEdgeMaterial.dispose();
       splitMaterial.dispose();
+      upscaleMaterial.dispose();
       postQuad.geometry.dispose();
+      upscaleQuad.geometry.dispose();
+      upscaleTarget.dispose();
       scene.traverse((object) => {
         if (object instanceof THREE.Mesh) {
           object.geometry.dispose();

@@ -1,7 +1,7 @@
 ---
 slug: 3d-pixel-art-outlines
 title: 3D pixel art outlines
-description: Creating pixel-perfect outlines and edge highlights using sobel filtering
+description: Creating pixel-perfect edge highlights using sobel filtering
 publishedAt: 2026-03-29
 readTime: 20 min read
 category: Shaders
@@ -20,9 +20,6 @@ import ArticleObjectIdDepthCompare from "../../components/ArticleObjectIdDepthCo
 import ArticleAugmentedBlendPreview from "../../components/ArticleAugmentedBlendPreview.astro";
 import ArticleSegmentBuffer from "../../components/ArticleSegmentBuffer.astro";
 import ArticleSegmentOutlineMask from "../../components/ArticleSegmentOutlineMask.astro";
-import ArticleSegmentIndentedNormals from "../../components/ArticleSegmentIndentedNormals.astro";
-import ArticleSegmentIndentedNormalsLit from "../../components/ArticleSegmentIndentedNormalsLit.astro";
-import ArticleSegmentCellBevel from "../../components/ArticleSegmentCellBevel.astro";
 import ArticleCombinedOutlineMask from "../../components/ArticleCombinedOutlineMask.astro";
 import Note from "../../components/Note.astro";
 import SegmentMapNote from "../../components/SegmentMapNote.astro";
@@ -35,7 +32,7 @@ Others have already covered using the depth and normals buffers for edge detecti
 
 # Depth-normals edge detection
 
-This part might be a bit of recap if you've already looked into 3d pixel art outlines before. The idea here is to sample a neighborhood pixels in the depth and normals textures, compare depth/normal differences, and draw outlines when these differences surpass some threshold. The idea is quite simple, but I've found tuning these thresholds to be the finnicky part.
+This part might be a bit of recap if you've already looked into 3d pixel art outlines before. The idea here is to sample a neighborhood of pixels in the depth and normals textures, compare depth/normal differences, and draw outlines when these differences surpass some threshold. The idea is quite simple, but I've found tuning these thresholds to be the finnicky part.
 
 <ArticlePixelArtBuffers />
 
@@ -173,15 +170,9 @@ float3 debug = float3(inset, 0.0, max(segment_c, inset));
 
 </CodeWindow>
 
-<ArticleSegmentCellBevel />
-
-<ArticleSegmentIndentedNormals />
-
-<ArticleSegmentIndentedNormalsLit />
-
-Now that we have the segment inset mask, we want to choose which "side" of the inset mask to use for our indented normal. We will use the surface normal and light direction
+Now that we have the segment inset mask, we want to choose which "side" of the inset mask to use for our indented normal. We will use the surface normal and light direction [... idk yet]
 
 <Note variant="primary" title="Site under construction">
-  If you're reading this, I'm still working on finishing this up! doing indented
+  If you're reading this, I'm working on finishing this up! doing indented
   normals properly is tricky. still trying to figure this out :^)
 </Note>

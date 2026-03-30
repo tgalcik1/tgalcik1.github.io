@@ -33,9 +33,9 @@ const { entry, morePosts } = Astro.props;
         <section class="shell section-gap">
           <div class="section-heading">
             <p class="eyebrow">More Writing</p>
-            <h2>More notes on graphics, systems, and building things carefully.</h2>
+            {/* <h2>More notes on graphics, systems, and building things carefully.</h2> */}
           </div>
-          <div class="grid-border more-grid">
+          <div class="grid-border more-grid panel">
             {morePosts.map((post) => (
               <PostPreviewCard
                 href={`/blog/${post.data.slug}/`}
@@ -61,6 +61,10 @@ const { entry, morePosts } = Astro.props;
 
   .more-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .section-heading .eyebrow {
+    color: var(--accent);
   }
 
   @media (max-width: 900px) {

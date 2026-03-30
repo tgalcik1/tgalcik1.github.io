@@ -1,0 +1,29 @@
+---
+import PixelArtUpscale from "./PixelArtUpscale";
+
+interface Props {
+  src: string;
+  alt: string;
+  class?: string;
+  imageClassName?: string;
+  loading?: "eager" | "lazy";
+  decoding?: "async" | "auto" | "sync";
+}
+
+const {
+  class: className = "",
+  imageClassName = "",
+  loading = "lazy",
+  decoding = "async",
+  ...props
+} = Astro.props;
+---
+
+<PixelArtUpscale
+  client:visible
+  className={className}
+  imageClassName={imageClassName}
+  loading={loading}
+  decoding={decoding}
+  {...props}
+/>

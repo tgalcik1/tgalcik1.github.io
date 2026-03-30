@@ -15,7 +15,12 @@ const { href, category, title, description, publishedAt } = Astro.props;
   <h3>{title}</h3>
   <p>{description}</p>
   <time datetime={publishedAt.toISOString()}>
-    {publishedAt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+    {publishedAt.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "UTC",
+    })}
   </time>
 </a>
 

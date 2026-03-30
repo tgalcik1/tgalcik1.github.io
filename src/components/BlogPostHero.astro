@@ -20,7 +20,12 @@ const { category, title, description, publishedAt, readTime } = Astro.props;
   <div class="post-hero__meta">
     <span>{category}</span>
     <time datetime={publishedAt.toISOString()}>
-      {publishedAt.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+      {publishedAt.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+        timeZone: "UTC",
+      })}
     </time>
     <span>{readTime}</span>
   </div>
