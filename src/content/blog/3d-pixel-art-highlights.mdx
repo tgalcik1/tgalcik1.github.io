@@ -25,7 +25,7 @@ import ArticleIndentedSegmentNormals from "../../components/ArticleIndentedSegme
 import Note from "../../components/Note.astro";
 import SegmentMapNote from "../../components/SegmentMapNote.astro";
 
-One of the defining characteristics of traditional pixel art is crisp, single-pixel wide outlines. When trying to achieve this effect with 3D geometry, simple outline methods like the <a href="https://bnpr.gitbook.io/bnpr/outline/inverse-hull-method" target="_blank" rel="noreferrer">inverse-hull method</a> lead to outlines with varying pixel widths, which doesn't lend will to the pixel art aesthetic.
+One of the defining characteristics of traditional pixel art is crisp, single-pixel thick outlines. When trying to achieve this effect with 3D geometry, simple outline methods like the <a href="https://bnpr.gitbook.io/bnpr/outline/inverse-hull-method" target="_blank" rel="noreferrer">inverse-hull method</a> lead to outlines with varying pixel widths, which doesn't lend well to capturing the pixel art aesthetic.
 
 Instead, we can leverage Sobel filtering on various buffers using screen coordinates to get the nice single-pixel crisp highlights we're after. This has quickly become the standard for 3d pixel art outlines, popularized by creators like <a href="https://imgur.com/gallery/creating-pixel-art-scene-realtime-3d-qwhbHQq" target="_blank" rel="noreferrer">t3ssel8r</a> and others.
 

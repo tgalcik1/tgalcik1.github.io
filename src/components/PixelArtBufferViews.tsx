@@ -16,6 +16,7 @@ type ViewMode =
   | "segmentIndentedLit"
   | "segmentIndentedApplied"
   | "segmentIndentedAppliedOrbit"
+  | "segmentIndentedAppliedPointLights"
   | "segmentBakedNormalMapTexture"
   | "segmentBakedNormalMapView"
   | "segmentBakedNormalMapApplied"
@@ -43,6 +44,7 @@ interface Props {
     | "segmentIndentedLitOnly"
     | "segmentIndentedAppliedOnly"
     | "segmentIndentedAppliedOrbitOnly"
+    | "segmentIndentedAppliedPointLightsOnly"
     | "segmentBakedNormalMapTextureOnly"
     | "segmentBakedNormalMapViewOnly"
     | "segmentBakedNormalMapAppliedOnly"
@@ -71,6 +73,9 @@ const SEGMENT_INDENTED_APPLIED_VIEW_MODES: ViewMode[] = [
 ];
 const SEGMENT_INDENTED_APPLIED_ORBIT_VIEW_MODES: ViewMode[] = [
   "segmentIndentedAppliedOrbit",
+];
+const SEGMENT_INDENTED_APPLIED_POINT_LIGHTS_VIEW_MODES: ViewMode[] = [
+  "segmentIndentedAppliedPointLights",
 ];
 const SEGMENT_BAKED_NORMAL_MAP_TEXTURE_VIEW_MODES: ViewMode[] = [
   "segmentBakedNormalMapTexture",
@@ -144,6 +149,7 @@ const INSET_DIRECTION_STRENGTH = 1;
 const INSET_BASE_NORMAL_WEIGHT = 0;
 const INSET_LIT_THRESHOLD = 0.5;
 const INSET_LIT_FALLOFF = 0.5;
+const INSET_BEVEL_STRENGTH = 1;
 const INSET_DARKEN_STRENGTH = 0.5;
 const INSET_FIELD_MODE = "blend";
 const INSET_FIELD_BLEND = 0.5;
@@ -180,6 +186,9 @@ export default function PixelArtBufferViews({
   const [insetLitThreshold, setInsetLitThreshold] =
     useState(INSET_LIT_THRESHOLD);
   const [insetLitFalloff, setInsetLitFalloff] = useState(INSET_LIT_FALLOFF);
+  const [insetBevelStrength, setInsetBevelStrength] = useState(
+    INSET_BEVEL_STRENGTH,
+  );
   const [insetDarkenStrength, setInsetDarkenStrength] = useState(
     INSET_DARKEN_STRENGTH,
   );
@@ -199,6 +208,7 @@ export default function PixelArtBufferViews({
     baseNormalWeight: insetBaseNormalWeight,
     litThreshold: insetLitThreshold,
     litFalloff: insetLitFalloff,
+    bevelStrength: insetBevelStrength,
     darkenStrength: insetDarkenStrength,
     fieldMode: insetFieldMode,
     fieldBlend: insetFieldBlend,
@@ -209,6 +219,7 @@ export default function PixelArtBufferViews({
     baseNormalWeight: insetBaseNormalWeight,
     litThreshold: insetLitThreshold,
     litFalloff: insetLitFalloff,
+    bevelStrength: insetBevelStrength,
     darkenStrength: insetDarkenStrength,
     fieldMode: insetFieldMode,
     fieldBlend: insetFieldBlend,
@@ -231,6 +242,7 @@ export default function PixelArtBufferViews({
   const segmentIndentedLitRef = useRef<HTMLDivElement>(null);
   const segmentIndentedAppliedRef = useRef<HTMLDivElement>(null);
   const segmentIndentedAppliedOrbitRef = useRef<HTMLDivElement>(null);
+  const segmentIndentedAppliedPointLightsRef = useRef<HTMLDivElement>(null);
   const segmentBakedNormalMapTextureRef = useRef<HTMLDivElement>(null);
   const segmentBakedNormalMapViewRef = useRef<HTMLDivElement>(null);
   const segmentBakedNormalMapAppliedRef = useRef<HTMLDivElement>(null);
@@ -259,6 +271,7 @@ export default function PixelArtBufferViews({
     mode === "segmentIndentedLitOnly" ||
     mode === "segmentIndentedAppliedOnly" ||
     mode === "segmentIndentedAppliedOrbitOnly" ||
+    mode === "segmentIndentedAppliedPointLightsOnly" ||
     mode === "segmentBakedNormalMapTextureOnly" ||
     mode === "segmentBakedNormalMapViewOnly" ||
     mode === "segmentBakedNormalMapAppliedOnly" ||
@@ -273,6 +286,7 @@ export default function PixelArtBufferViews({
     mode === "segmentIndentedLitOnly" ||
     mode === "segmentIndentedAppliedOnly" ||
     mode === "segmentIndentedAppliedOrbitOnly" ||
+    mode === "segmentIndentedAppliedPointLightsOnly" ||
     mode === "segmentBakedNormalMapTextureOnly" ||
     mode === "segmentBakedNormalMapViewOnly" ||
     mode === "segmentBakedNormalMapAppliedOnly";
@@ -338,6 +352,9 @@ export default function PixelArtBufferViews({
       }
       if (typeof next.litFalloff === "number") {
         setInsetLitFalloff(next.litFalloff);
+      }
+      if (typeof next.bevelStrength === "number") {
+        setInsetBevelStrength(next.bevelStrength);
       }
       if (typeof next.darkenStrength === "number") {
         setInsetDarkenStrength(next.darkenStrength);
@@ -476,9 +493,11 @@ export default function PixelArtBufferViews({
                           ? SEGMENT_INDENTED_LIT_VIEW_MODES
                           : mode === "segmentIndentedAppliedOnly"
                             ? SEGMENT_INDENTED_APPLIED_VIEW_MODES
-                            : mode === "segmentIndentedAppliedOrbitOnly"
-                              ? SEGMENT_INDENTED_APPLIED_ORBIT_VIEW_MODES
-                              : mode === "segmentBakedNormalMapTextureOnly"
+                  : mode === "segmentIndentedAppliedOrbitOnly"
+                    ? SEGMENT_INDENTED_APPLIED_ORBIT_VIEW_MODES
+                  : mode === "segmentIndentedAppliedPointLightsOnly"
+                    ? SEGMENT_INDENTED_APPLIED_POINT_LIGHTS_VIEW_MODES
+                  : mode === "segmentBakedNormalMapTextureOnly"
                                 ? SEGMENT_BAKED_NORMAL_MAP_TEXTURE_VIEW_MODES
                                 : mode === "segmentBakedNormalMapViewOnly"
                                   ? SEGMENT_BAKED_NORMAL_MAP_VIEW_MODES
@@ -510,6 +529,8 @@ export default function PixelArtBufferViews({
       segmentIndentedLit: segmentIndentedLitRef.current,
       segmentIndentedApplied: segmentIndentedAppliedRef.current,
       segmentIndentedAppliedOrbit: segmentIndentedAppliedOrbitRef.current,
+      segmentIndentedAppliedPointLights:
+        segmentIndentedAppliedPointLightsRef.current,
       segmentBakedNormalMapTexture: segmentBakedNormalMapTextureRef.current,
       segmentBakedNormalMapView: segmentBakedNormalMapViewRef.current,
       segmentBakedNormalMapApplied: segmentBakedNormalMapAppliedRef.current,
@@ -1399,6 +1420,27 @@ export default function PixelArtBufferViews({
         }
       `,
     });
+    const worldPositionMaterial = new THREE.ShaderMaterial({
+      vertexShader: `
+        varying vec3 vWorldPosition;
+
+        void main() {
+          vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vWorldPosition;
+
+        void main() {
+          gl_FragColor = vec4(vWorldPosition, 1.0);
+        }
+      `,
+    });
+    const occlusionDepthMaterial = new THREE.MeshBasicMaterial({
+      color: "#000000",
+    });
+    occlusionDepthMaterial.colorWrite = false;
     const viewTangentMaterial = new THREE.ShaderMaterial({
       extensions: {
         derivatives: true,
@@ -2770,10 +2812,13 @@ export default function PixelArtBufferViews({
           if (length(bitangent) < 0.0001) {
             bitangent = normalize(cross(tangent, baseNormal));
           }
-          vec3 derivedNormal = normalize(
-            tangent * fieldDirection.x * directionStrength +
-            bitangent * fieldDirection.y * directionStrength +
+          vec3 insetNormal = normalize(
+            tangent * fieldDirection.x +
+            bitangent * fieldDirection.y +
             baseNormal * baseNormalWeight
+          );
+          vec3 derivedNormal = normalize(
+            mix(baseNormal, insetNormal, clamp(directionStrength, 0.0, 1.0))
           );
 
           vec3 preview = derivedNormal * 0.5 + 0.5;
@@ -2795,6 +2840,7 @@ export default function PixelArtBufferViews({
         baseNormalWeight: { value: insetBaseNormalWeight },
         litThreshold: { value: insetLitThreshold },
         litFalloff: { value: insetLitFalloff },
+        bevelStrength: { value: insetBevelStrength },
       },
       vertexShader: `
         varying vec2 vUv;
@@ -2816,6 +2862,7 @@ export default function PixelArtBufferViews({
         uniform float baseNormalWeight;
         uniform float litThreshold;
         uniform float litFalloff;
+        uniform float bevelStrength;
 
         varying vec2 vUv;
 
@@ -2880,8 +2927,8 @@ export default function PixelArtBufferViews({
             litThreshold,
             bevelLight
           );
-          float magenta = bevelMask * bevelLit;
-          float bevelShadow = bevelMask * (1.0 - bevelLit);
+          float magenta = bevelMask * bevelLit * bevelStrength;
+          float bevelShadow = bevelMask * (1.0 - bevelLit) * bevelStrength;
 
           vec3 shadedBase = color * mix(1.0, 0.65, bevelShadow);
           vec3 overlay = vec3(magenta, 0.0, max(blue, magenta));
@@ -2905,6 +2952,7 @@ export default function PixelArtBufferViews({
         baseNormalWeight: { value: insetBaseNormalWeight },
         litThreshold: { value: insetLitThreshold },
         litFalloff: { value: insetLitFalloff },
+        bevelStrength: { value: insetBevelStrength },
         darkenStrength: { value: insetDarkenStrength },
       },
       vertexShader: `
@@ -2927,6 +2975,7 @@ export default function PixelArtBufferViews({
         uniform float baseNormalWeight;
         uniform float litThreshold;
         uniform float litFalloff;
+        uniform float bevelStrength;
         uniform float darkenStrength;
 
         varying vec2 vUv;
@@ -2991,12 +3040,188 @@ export default function PixelArtBufferViews({
             litThreshold,
             bevelLight
           );
-          vec3 litColor = min(color * (1.0 + 0.55 * magenta), vec3(1.0));
+          vec3 litColor = min(
+            color * (1.0 + 0.55 * magenta * bevelStrength),
+            vec3(1.0)
+          );
           vec3 result = mix(litColor, litColor * darkenStrength, blue);
           gl_FragColor = vec4(linearToSRGB(clamp(result, 0.0, 1.0)), 1.0);
         }
       `,
     });
+    const segmentIndentedAppliedPointLightsMaterial =
+      new THREE.ShaderMaterial({
+        uniforms: {
+          tColor: { value: null },
+          tSegmentMask: { value: null },
+          tParticipation: { value: null },
+          tSegmentField: { value: null },
+          tNormals: { value: null },
+          tTangents: { value: null },
+          tWorldPosition: { value: null },
+          texelSize: { value: new THREE.Vector2(1, 1) },
+          directionStrength: { value: insetDirectionStrength },
+          baseNormalWeight: { value: insetBaseNormalWeight },
+          litThreshold: { value: insetLitThreshold },
+          litFalloff: { value: insetLitFalloff },
+          bevelStrength: { value: insetBevelStrength },
+          darkenStrength: { value: insetDarkenStrength },
+          pointLightA: { value: new THREE.Vector3() },
+          pointLightB: { value: new THREE.Vector3() },
+          pointLightC: { value: new THREE.Vector3() },
+          pointColorA: { value: new THREE.Color("#ff6b6b") },
+          pointColorB: { value: new THREE.Color("#5eead4") },
+          pointColorC: { value: new THREE.Color("#fde047") },
+        },
+        vertexShader: `
+          varying vec2 vUv;
+
+          void main() {
+            vUv = uv;
+            gl_Position = vec4(position.xy, 0.0, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform sampler2D tColor;
+          uniform sampler2D tSegmentMask;
+          uniform sampler2D tParticipation;
+          uniform sampler2D tSegmentField;
+          uniform sampler2D tNormals;
+          uniform sampler2D tTangents;
+          uniform sampler2D tWorldPosition;
+          uniform vec2 texelSize;
+          uniform float directionStrength;
+          uniform float baseNormalWeight;
+          uniform float litThreshold;
+          uniform float litFalloff;
+          uniform float bevelStrength;
+          uniform float darkenStrength;
+          uniform vec3 pointLightA;
+          uniform vec3 pointLightB;
+          uniform vec3 pointLightC;
+          uniform vec3 pointColorA;
+          uniform vec3 pointColorB;
+          uniform vec3 pointColorC;
+
+          varying vec2 vUv;
+
+          float sampleBlue(vec2 uv) {
+            return texture2D(tSegmentMask, uv).b;
+          }
+
+          float sampleParticipation(vec2 uv) {
+            return texture2D(tParticipation, uv).r;
+          }
+
+          vec3 sampleNormal(vec2 uv) {
+            return normalize(texture2D(tNormals, uv).xyz * 2.0 - 1.0);
+          }
+
+          vec3 sampleTangent(vec2 uv) {
+            return normalize(texture2D(tTangents, uv).xyz * 2.0 - 1.0);
+          }
+
+          vec3 sampleWorldPosition(vec2 uv) {
+            return texture2D(tWorldPosition, uv).xyz;
+          }
+
+          vec3 linearToSRGB(vec3 color) {
+            vec3 cutoff = step(color, vec3(0.0031308));
+            vec3 lower = color * 12.92;
+            vec3 upper = 1.055 * pow(max(color, vec3(0.0)), vec3(1.0 / 2.4)) - 0.055;
+            return mix(upper, lower, cutoff);
+          }
+
+          vec3 pointContribution(
+            vec3 worldPosition,
+            vec3 bevelNormal,
+            vec3 lightPosition,
+            vec3 lightColor
+          ) {
+            vec3 toLight = lightPosition - worldPosition;
+            float distanceToLight = length(toLight);
+            if (distanceToLight < 0.0001) return vec3(0.0);
+            vec3 lightDir = toLight / distanceToLight;
+            float ndl = clamp(dot(bevelNormal, lightDir), 0.0, 1.0);
+            float thresholdMask = smoothstep(
+              max(0.0, litThreshold - litFalloff),
+              litThreshold,
+              ndl
+            );
+            float attenuation =
+              1.0 / (1.0 + distanceToLight * distanceToLight * 0.22);
+            return lightColor * attenuation * thresholdMask * ndl;
+          }
+
+          void main() {
+            vec3 color = texture2D(tColor, vUv).rgb;
+            float participation = step(0.0001, sampleParticipation(vUv));
+            float blue = sampleBlue(vUv) * participation;
+
+            vec2 uvLeft = clamp(vUv + vec2(-texelSize.x, 0.0), vec2(0.0), vec2(1.0));
+            vec2 uvRight = clamp(vUv + vec2(texelSize.x, 0.0), vec2(0.0), vec2(1.0));
+            vec2 uvUp = clamp(vUv + vec2(0.0, texelSize.y), vec2(0.0), vec2(1.0));
+            vec2 uvDown = clamp(vUv + vec2(0.0, -texelSize.y), vec2(0.0), vec2(1.0));
+
+            float blueLeft =
+              sampleBlue(uvLeft) * step(0.0001, sampleParticipation(uvLeft));
+            float blueRight =
+              sampleBlue(uvRight) * step(0.0001, sampleParticipation(uvRight));
+            float blueUp =
+              sampleBlue(uvUp) * step(0.0001, sampleParticipation(uvUp));
+            float blueDown =
+              sampleBlue(uvDown) * step(0.0001, sampleParticipation(uvDown));
+
+            float inset = (1.0 - step(0.0001, blue))
+              * step(0.0001, max(max(blueLeft, blueRight), max(blueUp, blueDown)));
+
+            vec2 bevelDirection = -(texture2D(tSegmentField, vUv).xy * 2.0 - 1.0);
+            vec3 baseNormal = sampleNormal(vUv);
+            vec3 tangent = sampleTangent(vUv);
+            tangent = normalize(tangent - baseNormal * dot(baseNormal, tangent));
+            if (length(tangent) < 0.0001) {
+              tangent = normalize(cross(vec3(0.0, 1.0, 0.0), baseNormal));
+            }
+            vec3 bitangent = normalize(cross(baseNormal, tangent));
+            if (length(bitangent) < 0.0001) {
+              bitangent = normalize(cross(tangent, baseNormal));
+            }
+            vec3 bevelNormal = normalize(
+              tangent * bevelDirection.x * directionStrength +
+              bitangent * bevelDirection.y * directionStrength +
+              baseNormal * baseNormalWeight
+            );
+
+            vec3 worldPosition = sampleWorldPosition(vUv);
+            vec3 lightTint = pointContribution(
+              worldPosition,
+              bevelNormal,
+              pointLightA,
+              pointColorA
+            );
+            lightTint += pointContribution(
+              worldPosition,
+              bevelNormal,
+              pointLightB,
+              pointColorB
+            );
+            lightTint += pointContribution(
+              worldPosition,
+              bevelNormal,
+              pointLightC,
+              pointColorC
+            );
+
+            vec3 litColor = min(
+              color +
+                color * lightTint * inset * bevelStrength * 1.2,
+              vec3(1.0)
+            );
+            vec3 result = mix(litColor, litColor * darkenStrength, blue);
+            gl_FragColor = vec4(linearToSRGB(clamp(result, 0.0, 1.0)), 1.0);
+          }
+        `,
+      });
     const segmentBakedNormalMapTexturePreviewMaterial =
       new THREE.ShaderMaterial({
         uniforms: {
@@ -3346,6 +3571,7 @@ export default function PixelArtBufferViews({
     let standaloneLightTarget: THREE.WebGLRenderTarget | null = null;
     let standaloneSegmentMaskTarget: THREE.WebGLRenderTarget | null = null;
     let standaloneSegmentFieldTarget: THREE.WebGLRenderTarget | null = null;
+    let standaloneWorldPositionTarget: THREE.WebGLRenderTarget | null = null;
     let standaloneSegmentParticipationTarget: THREE.WebGLRenderTarget | null =
       null;
     let standaloneSegmentBakedNormalMapTarget: THREE.WebGLRenderTarget | null =
@@ -4077,6 +4303,58 @@ export default function PixelArtBufferViews({
       keyLight.position.x,
       keyLight.position.z,
     );
+    const pointLightA = new THREE.PointLight("#ff6b6b", 2.8, 9, 2);
+    const pointLightB = new THREE.PointLight("#5eead4", 2.6, 9, 2);
+    const pointLightC = new THREE.PointLight("#fde047", 2.4, 9, 2);
+    pointLightA.castShadow = true;
+    pointLightB.castShadow = true;
+    pointLightC.castShadow = true;
+    pointLightA.shadow.mapSize.set(512, 512);
+    pointLightB.shadow.mapSize.set(512, 512);
+    pointLightC.shadow.mapSize.set(512, 512);
+    pointLightA.shadow.bias = -0.002;
+    pointLightB.shadow.bias = -0.002;
+    pointLightC.shadow.bias = -0.002;
+    pointLightA.shadow.normalBias = 0.02;
+    pointLightB.shadow.normalBias = 0.02;
+    pointLightC.shadow.normalBias = 0.02;
+    pointLightA.shadow.camera.near = 0.1;
+    pointLightB.shadow.camera.near = 0.1;
+    pointLightC.shadow.camera.near = 0.1;
+    pointLightA.shadow.camera.far = 10;
+    pointLightB.shadow.camera.far = 10;
+    pointLightC.shadow.camera.far = 10;
+    const pointLightMarkerGeometry = new THREE.SphereGeometry(0.11, 12, 12);
+    const pointLightMarkerMaterialA = new THREE.MeshBasicMaterial({
+      color: "#ff6b6b",
+    });
+    const pointLightMarkerMaterialB = new THREE.MeshBasicMaterial({
+      color: "#5eead4",
+    });
+    const pointLightMarkerMaterialC = new THREE.MeshBasicMaterial({
+      color: "#fde047",
+    });
+    const pointLightMarkerA = new THREE.Mesh(
+      pointLightMarkerGeometry,
+      pointLightMarkerMaterialA,
+    );
+    const pointLightMarkerB = new THREE.Mesh(
+      pointLightMarkerGeometry,
+      pointLightMarkerMaterialB,
+    );
+    const pointLightMarkerC = new THREE.Mesh(
+      pointLightMarkerGeometry,
+      pointLightMarkerMaterialC,
+    );
+    pointLightA.add(pointLightMarkerA);
+    pointLightB.add(pointLightMarkerB);
+    pointLightC.add(pointLightMarkerC);
+    pointLightA.visible = false;
+    pointLightB.visible = false;
+    pointLightC.visible = false;
+    scene.add(pointLightA);
+    scene.add(pointLightB);
+    scene.add(pointLightC);
 
     const loader = new GLTFLoader();
     let torusKnotRoot: THREE.Object3D | null = null;
@@ -4198,6 +4476,7 @@ export default function PixelArtBufferViews({
         activeMode === "segmentIndentedLit" ||
         activeMode === "segmentIndentedApplied" ||
         activeMode === "segmentIndentedAppliedOrbit" ||
+        activeMode === "segmentIndentedAppliedPointLights" ||
         activeMode === "segmentBakedNormalMapView" ||
         activeMode === "segmentBakedNormalMapApplied"
       ) {
@@ -4222,6 +4501,7 @@ export default function PixelArtBufferViews({
           activeMode === "segmentIndentedLit" ||
           activeMode === "segmentIndentedApplied" ||
           activeMode === "segmentIndentedAppliedOrbit" ||
+          activeMode === "segmentIndentedAppliedPointLights" ||
           activeMode === "segmentBakedNormalMapView" ||
           activeMode === "segmentBakedNormalMapApplied"
         ) {
@@ -4250,6 +4530,7 @@ export default function PixelArtBufferViews({
             activeMode === "segmentIndentedLit" ||
             activeMode === "segmentIndentedApplied" ||
             activeMode === "segmentIndentedAppliedOrbit" ||
+            activeMode === "segmentIndentedAppliedPointLights" ||
             activeMode === "segmentBakedNormalMapView" ||
             activeMode === "segmentBakedNormalMapApplied"
           ) {
@@ -4262,6 +4543,9 @@ export default function PixelArtBufferViews({
             const segmentParticipationTarget = new THREE.WebGLRenderTarget(
               1,
               1,
+              {
+                depthBuffer: true,
+              },
             );
             segmentParticipationTarget.texture.minFilter = THREE.NearestFilter;
             segmentParticipationTarget.texture.magFilter = THREE.NearestFilter;
@@ -4275,6 +4559,7 @@ export default function PixelArtBufferViews({
               activeMode === "segmentIndentedLit" ||
               activeMode === "segmentIndentedApplied" ||
               activeMode === "segmentIndentedAppliedOrbit" ||
+              activeMode === "segmentIndentedAppliedPointLights" ||
               activeMode === "segmentBakedNormalMapView" ||
               activeMode === "segmentBakedNormalMapApplied"
             ) {
@@ -4298,7 +4583,21 @@ export default function PixelArtBufferViews({
             colorTarget.texture.minFilter = THREE.NearestFilter;
             colorTarget.texture.magFilter = THREE.NearestFilter;
             colorTarget.texture.generateMipmaps = false;
+            if (activeMode === "segmentIndentedAppliedPointLights") {
+              colorTarget.texture.type = THREE.HalfFloatType;
+              colorTarget.texture.colorSpace = THREE.LinearSRGBColorSpace;
+            }
             standaloneColorTarget = colorTarget;
+
+            if (activeMode === "segmentIndentedAppliedPointLights") {
+              const worldPositionTarget = new THREE.WebGLRenderTarget(1, 1);
+              worldPositionTarget.texture.minFilter = THREE.NearestFilter;
+              worldPositionTarget.texture.magFilter = THREE.NearestFilter;
+              worldPositionTarget.texture.generateMipmaps = false;
+              worldPositionTarget.texture.type = THREE.HalfFloatType;
+              worldPositionTarget.texture.colorSpace = THREE.NoColorSpace;
+              standaloneWorldPositionTarget = worldPositionTarget;
+            }
           }
         }
       }
@@ -4482,6 +4781,7 @@ export default function PixelArtBufferViews({
           mount === mounts.segmentIndentedLit ||
           mount === mounts.segmentIndentedApplied ||
           mount === mounts.segmentIndentedAppliedOrbit ||
+          mount === mounts.segmentIndentedAppliedPointLights ||
           mount === mounts.segmentBakedNormalMapView ||
           mount === mounts.segmentBakedNormalMapApplied ||
           mount === mounts.combinedMask ||
@@ -4505,9 +4805,11 @@ export default function PixelArtBufferViews({
                           ? "segmentIndentedLit"
                           : mount === mounts.segmentIndentedApplied
                             ? "segmentIndentedApplied"
-                            : mount === mounts.segmentIndentedAppliedOrbit
-                              ? "segmentIndentedAppliedOrbit"
-                              : mount === mounts.segmentBakedNormalMapView
+                          : mount === mounts.segmentIndentedAppliedOrbit
+                            ? "segmentIndentedAppliedOrbit"
+                          : mount === mounts.segmentIndentedAppliedPointLights
+                            ? "segmentIndentedAppliedPointLights"
+                          : mount === mounts.segmentBakedNormalMapView
                                 ? "segmentBakedNormalMapView"
                                 : mount === mounts.segmentBakedNormalMapApplied
                                   ? "segmentBakedNormalMapApplied"
@@ -4524,6 +4826,7 @@ export default function PixelArtBufferViews({
             mount === mounts.segmentIndentedLit ||
             mount === mounts.segmentIndentedApplied ||
             mount === mounts.segmentIndentedAppliedOrbit ||
+            mount === mounts.segmentIndentedAppliedPointLights ||
             mount === mounts.segmentBakedNormalMapView ||
             mount === mounts.segmentBakedNormalMapApplied
           ) {
@@ -4541,6 +4844,7 @@ export default function PixelArtBufferViews({
               mount === mounts.segmentIndentedLit ||
               mount === mounts.segmentIndentedApplied ||
               mount === mounts.segmentIndentedAppliedOrbit ||
+              mount === mounts.segmentIndentedAppliedPointLights ||
               mount === mounts.segmentBakedNormalMapView ||
               mount === mounts.segmentBakedNormalMapApplied
             ) {
@@ -4550,6 +4854,7 @@ export default function PixelArtBufferViews({
                 renderHeight,
               );
               standaloneSegmentFieldTarget?.setSize(renderWidth, renderHeight);
+              standaloneWorldPositionTarget?.setSize(renderWidth, renderHeight);
               standaloneSegmentBakedNormalMapTarget?.setSize(
                 renderWidth,
                 renderHeight,
@@ -4902,6 +5207,7 @@ export default function PixelArtBufferViews({
           mode === "segmentIndentedLit" ||
           mode === "segmentIndentedApplied" ||
           mode === "segmentIndentedAppliedOrbit" ||
+          mode === "segmentIndentedAppliedPointLights" ||
           mode === "segmentBakedNormalMapView" ||
           mode === "segmentBakedNormalMapApplied"
         ) {
@@ -4930,14 +5236,31 @@ export default function PixelArtBufferViews({
             mode === "segmentIndentedLit" ||
             mode === "segmentIndentedApplied" ||
             mode === "segmentIndentedAppliedOrbit" ||
+            mode === "segmentIndentedAppliedPointLights" ||
             mode === "segmentBakedNormalMapView" ||
             mode === "segmentBakedNormalMapApplied"
           ) {
             if (!standaloneColorTarget) return;
+            const usingPointLights =
+              mode === "segmentIndentedAppliedPointLights";
+            const keyLightVisible = keyLight.visible;
+            const pointLightAVisible = pointLightA.visible;
+            const pointLightBVisible = pointLightB.visible;
+            const pointLightCVisible = pointLightC.visible;
+            if (usingPointLights) {
+              keyLight.visible = false;
+              pointLightA.visible = true;
+              pointLightB.visible = true;
+              pointLightC.visible = true;
+            }
             scene.overrideMaterial = null;
             renderer.setRenderTarget(standaloneColorTarget);
             renderer.render(scene, camera);
             renderer.setRenderTarget(null);
+            keyLight.visible = keyLightVisible;
+            pointLightA.visible = pointLightAVisible;
+            pointLightB.visible = pointLightBVisible;
+            pointLightC.visible = pointLightCVisible;
           }
 
           renderer.setRenderTarget(target);
@@ -4997,6 +5320,7 @@ export default function PixelArtBufferViews({
             mode === "segmentIndentedLit" ||
             mode === "segmentIndentedApplied" ||
             mode === "segmentIndentedAppliedOrbit" ||
+            mode === "segmentIndentedAppliedPointLights" ||
             mode === "segmentBakedNormalMapView" ||
             mode === "segmentBakedNormalMapApplied"
           ) {
@@ -5007,8 +5331,30 @@ export default function PixelArtBufferViews({
             renderer.setRenderTarget(null);
 
             if (!standaloneSegmentParticipationTarget) return;
+            const participationUsesPointLightMarkers =
+              mode === "segmentIndentedAppliedPointLights";
+            const pointLightAVisible = pointLightA.visible;
+            const pointLightBVisible = pointLightB.visible;
+            const pointLightCVisible = pointLightC.visible;
+            if (participationUsesPointLightMarkers) {
+              pointLightA.visible = true;
+              pointLightB.visible = true;
+              pointLightC.visible = true;
+            }
+            scene.overrideMaterial = occlusionDepthMaterial;
             renderer.setRenderTarget(standaloneSegmentParticipationTarget);
+            renderer.clear(true, true, true);
+            renderer.render(scene, camera);
+            scene.overrideMaterial = null;
+            if (participationUsesPointLightMarkers) {
+              pointLightA.visible = pointLightAVisible;
+              pointLightB.visible = pointLightBVisible;
+              pointLightC.visible = pointLightCVisible;
+            }
+            const previousAutoClear = renderer.autoClear;
+            renderer.autoClear = false;
             renderSegmentParticipation(renderer, camera);
+            renderer.autoClear = previousAutoClear;
             renderer.setRenderTarget(null);
 
             if (!standaloneSegmentFieldTarget) return;
@@ -5021,6 +5367,15 @@ export default function PixelArtBufferViews({
             renderSegmentBakedNormalMap(renderer, camera);
             renderer.setRenderTarget(null);
 
+            if (mode === "segmentIndentedAppliedPointLights") {
+              if (!standaloneWorldPositionTarget) return;
+              scene.overrideMaterial = worldPositionMaterial;
+              renderer.setRenderTarget(standaloneWorldPositionTarget);
+              renderer.render(scene, camera);
+              renderer.setRenderTarget(null);
+              scene.overrideMaterial = null;
+            }
+
             const worldLightDirection = new THREE.Vector3()
               .subVectors(keyLight.position, lookTarget)
               .normalize();
@@ -5031,8 +5386,10 @@ export default function PixelArtBufferViews({
                 : mode === "segmentIndentedApplied" ||
                     mode === "segmentIndentedAppliedOrbit"
                   ? segmentIndentedAppliedMaterial
-                  : mode === "segmentBakedNormalMapView"
-                    ? segmentBakedNormalMapViewMaterial
+                : mode === "segmentIndentedAppliedPointLights"
+                  ? segmentIndentedAppliedPointLightsMaterial
+                : mode === "segmentBakedNormalMapView"
+                  ? segmentBakedNormalMapViewMaterial
                     : mode === "segmentBakedNormalMapApplied"
                       ? segmentBakedNormalMapAppliedMaterial
                       : mode === "segmentIndentedNormal"
@@ -5059,6 +5416,10 @@ export default function PixelArtBufferViews({
               indentedMaterial.uniforms.tSegmentField.value =
                 standaloneSegmentFieldTarget?.texture ?? null;
             }
+            if ("tWorldPosition" in indentedMaterial.uniforms) {
+              indentedMaterial.uniforms.tWorldPosition.value =
+                standaloneWorldPositionTarget?.texture ?? null;
+            }
             if ("fieldUnderlay" in indentedMaterial.uniforms) {
               indentedMaterial.uniforms.fieldUnderlay.value =
                 insetControlsRef.current.fieldUnderlay;
@@ -5078,6 +5439,10 @@ export default function PixelArtBufferViews({
             if ("litFalloff" in indentedMaterial.uniforms) {
               indentedMaterial.uniforms.litFalloff.value =
                 insetControlsRef.current.litFalloff;
+            }
+            if ("bevelStrength" in indentedMaterial.uniforms) {
+              indentedMaterial.uniforms.bevelStrength.value =
+                insetControlsRef.current.bevelStrength;
             }
             if ("darkenStrength" in indentedMaterial.uniforms) {
               indentedMaterial.uniforms.darkenStrength.value =
@@ -5106,6 +5471,17 @@ export default function PixelArtBufferViews({
             if ("lightDirection" in indentedMaterial.uniforms) {
               indentedMaterial.uniforms.lightDirection.value.copy(
                 worldLightDirection,
+              );
+            }
+            if ("pointLightA" in indentedMaterial.uniforms) {
+              indentedMaterial.uniforms.pointLightA.value.copy(
+                pointLightA.position,
+              );
+              indentedMaterial.uniforms.pointLightB.value.copy(
+                pointLightB.position,
+              );
+              indentedMaterial.uniforms.pointLightC.value.copy(
+                pointLightC.position,
               );
             }
           }
@@ -5182,6 +5558,25 @@ export default function PixelArtBufferViews({
         cameras.get("segmentIndentedAppliedOrbit")?.lookAt(target);
       }
 
+      if (activeModes.includes("segmentIndentedAppliedPointLights")) {
+        const planeExtent = 2.65;
+        pointLightA.position.set(
+          Math.sin(elapsed * 0.9) * planeExtent,
+          1.35 + Math.sin(elapsed * 1.7) * 0.18,
+          Math.cos(elapsed * 1.1) * planeExtent,
+        );
+        pointLightB.position.set(
+          Math.sin(elapsed * 1.2 + 1.6) * planeExtent,
+          1.6 + Math.cos(elapsed * 1.4) * 0.2,
+          Math.cos(elapsed * 0.85 + 0.9) * planeExtent,
+        );
+        pointLightC.position.set(
+          Math.sin(elapsed * 0.75 + 3.1) * planeExtent,
+          1.2 + Math.sin(elapsed * 1.1 + 0.5) * 0.22,
+          Math.cos(elapsed * 1.35 + 2.4) * planeExtent,
+        );
+      }
+
       if (activeModes.includes("segmentIndentedOrbit")) {
         const orbitYaw = cameraYaw + elapsed * 0.35;
         const orbitPosition = new THREE.Vector3(
@@ -5253,6 +5648,8 @@ export default function PixelArtBufferViews({
       worldNormalMaterial.dispose();
       worldTangentMaterial.dispose();
       viewTangentMaterial.dispose();
+      worldPositionMaterial.dispose();
+      occlusionDepthMaterial.dispose();
       depthMaterial.dispose();
       depthEdgeMaterial.dispose();
       normalEdgeMaterial.dispose();
@@ -5280,7 +5677,12 @@ export default function PixelArtBufferViews({
       standaloneSegmentMaskTarget?.dispose();
       standaloneSegmentParticipationTarget?.dispose();
       standaloneSegmentFieldTarget?.dispose();
+      standaloneWorldPositionTarget?.dispose();
       standaloneSegmentBakedNormalMapTarget?.dispose();
+      pointLightMarkerGeometry.dispose();
+      pointLightMarkerMaterialA.dispose();
+      pointLightMarkerMaterialB.dispose();
+      pointLightMarkerMaterialC.dispose();
       voxelMaterial.dispose();
       stoneMaterial.dispose();
       pedestalSideMaterial.dispose();
@@ -5325,6 +5727,7 @@ export default function PixelArtBufferViews({
     mode === "segmentIndentedLitOnly" ||
     mode === "segmentIndentedAppliedOnly" ||
     mode === "segmentIndentedAppliedOrbitOnly" ||
+    mode === "segmentIndentedAppliedPointLightsOnly" ||
     mode === "segmentBakedNormalMapTextureOnly" ||
     mode === "segmentBakedNormalMapViewOnly" ||
     mode === "segmentBakedNormalMapAppliedOnly" ||
@@ -5337,17 +5740,21 @@ export default function PixelArtBufferViews({
     mode === "segmentIndentedNormalOnly" ||
     mode === "segmentIndentedLitOnly" ||
     mode === "segmentIndentedAppliedOnly" ||
-    mode === "segmentIndentedAppliedOrbitOnly";
+    mode === "segmentIndentedAppliedOrbitOnly" ||
+    mode === "segmentIndentedAppliedPointLightsOnly";
   const showSegmentFieldBlendControl = showSegmentFieldModeControl;
   const showInsetNormalControls =
     mode === "segmentIndentedNormalOnly" ||
     mode === "segmentIndentedLitOnly" ||
     mode === "segmentIndentedAppliedOnly" ||
-    mode === "segmentIndentedAppliedOrbitOnly";
+    mode === "segmentIndentedAppliedOrbitOnly" ||
+    mode === "segmentIndentedAppliedPointLightsOnly";
   const showInsetLitThresholdControl =
     mode === "segmentIndentedLitOnly" ||
     mode === "segmentIndentedAppliedOnly" ||
-    mode === "segmentIndentedAppliedOrbitOnly";
+    mode === "segmentIndentedAppliedOrbitOnly" ||
+    mode === "segmentIndentedAppliedPointLightsOnly";
+  const showInsetBevelStrengthControl = showInsetLitThresholdControl;
   const showBakedNormalMapBlendControl =
     mode === "segmentBakedNormalMapViewOnly" ||
     mode === "segmentBakedNormalMapAppliedOnly";
@@ -5372,6 +5779,7 @@ export default function PixelArtBufferViews({
       baseNormalWeight: number;
       litThreshold: number;
       litFalloff: number;
+      bevelStrength: number;
       darkenStrength: number;
       fieldMode: "quantized" | "smooth" | "blend";
       fieldBlend: number;
@@ -5388,6 +5796,9 @@ export default function PixelArtBufferViews({
     }
     if (typeof next.litFalloff === "number") {
       setInsetLitFalloff(next.litFalloff);
+    }
+    if (typeof next.bevelStrength === "number") {
+      setInsetBevelStrength(next.bevelStrength);
     }
     if (typeof next.darkenStrength === "number") {
       setInsetDarkenStrength(next.darkenStrength);
@@ -5529,6 +5940,13 @@ export default function PixelArtBufferViews({
       {mode === "segmentIndentedAppliedOrbitOnly" && (
         <div
           ref={segmentIndentedAppliedOrbitRef}
+          className="pixel-buffer-demo__viewport pixel-buffer-demo__viewport--solo"
+        />
+      )}
+
+      {mode === "segmentIndentedAppliedPointLightsOnly" && (
+        <div
+          ref={segmentIndentedAppliedPointLightsRef}
           className="pixel-buffer-demo__viewport pixel-buffer-demo__viewport--solo"
         />
       )}
@@ -5991,6 +6409,46 @@ export default function PixelArtBufferViews({
             </button>
           </div>
 
+          {showInsetBevelStrengthControl && (
+            <div className="pixel-buffer-demo__control-row">
+              <label
+                className="pixel-buffer-demo__control"
+                aria-label="Bevel strength"
+              >
+                <span>Bevel Strength</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="4"
+                  step="0.01"
+                  value={insetBevelStrength}
+                  onChange={(event) =>
+                    updateInsetControls({
+                      bevelStrength: Number(event.currentTarget.value),
+                    })
+                  }
+                />
+              </label>
+              <button
+                className="pixel-buffer-demo__reset"
+                type="button"
+                aria-label="Reset bevel strength"
+                onClick={() =>
+                  updateInsetControls({
+                    bevelStrength: INSET_BEVEL_STRENGTH,
+                  })
+                }
+              >
+                <svg viewBox="0 0 32 32" aria-hidden="true">
+                  <path
+                    d="M18,28A12,12,0,1,0,6,16v6.2L2.4,18.6,1,20l6,6,6-6-1.4-1.4L8,22.2V16H8A10,10,0,1,1,18,26Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </button>
+            </div>
+          )}
+
           {showInsetLitThresholdControl && (
             <>
               <div className="pixel-buffer-demo__control-row">
@@ -6071,7 +6529,8 @@ export default function PixelArtBufferViews({
           )}
 
           {(mode === "segmentIndentedAppliedOnly" ||
-            mode === "segmentIndentedAppliedOrbitOnly") && (
+            mode === "segmentIndentedAppliedOrbitOnly" ||
+            mode === "segmentIndentedAppliedPointLightsOnly") && (
             <div className="pixel-buffer-demo__control-row">
               <label
                 className="pixel-buffer-demo__control"
