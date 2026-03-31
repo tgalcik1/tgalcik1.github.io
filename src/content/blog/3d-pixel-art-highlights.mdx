@@ -21,6 +21,7 @@ import ArticleAugmentedBlendPreview from "../../components/ArticleAugmentedBlend
 import ArticleSegmentBuffer from "../../components/ArticleSegmentBuffer.astro";
 import ArticleSegmentOutlineMask from "../../components/ArticleSegmentOutlineMask.astro";
 import ArticleCombinedOutlineMask from "../../components/ArticleCombinedOutlineMask.astro";
+import ArticleIndentedSegmentNormals from "../../components/ArticleIndentedSegmentNormals.astro";
 import Note from "../../components/Note.astro";
 import SegmentMapNote from "../../components/SegmentMapNote.astro";
 
@@ -170,9 +171,8 @@ float3 debug = float3(inset, 0.0, max(segment_c, inset));
 
 </CodeWindow>
 
-Now that we have the segment inset mask, we want to choose which "side" of the inset mask to use for our indented normal. We will use the surface normal and light direction [... idk yet]
+<ArticleIndentedSegmentNormals />
 
 <Note variant="primary" title="Site under construction">
-  If you're reading this, I'm working on finishing this up! doing indented
-  normals properly is tricky. still trying to figure this out :^)
+  If you're reading this, I'm still working on finishing this up!
 </Note>
