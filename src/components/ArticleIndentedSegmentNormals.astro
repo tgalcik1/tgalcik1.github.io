@@ -77,6 +77,21 @@ import PixelArtBufferViews from "./PixelArtBufferViews";
   </div>
 </div>
 
+{/* <div class="pixel-buffer-article">
+  <div class="pixel-buffer-article__header">
+    <div class="pixel-buffer-article__dots" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <span>Applied Inset Shading, Baked Normal Map</span>
+    <span>offline bake</span>
+  </div>
+  <div class="pixel-buffer-article__body">
+    <PixelArtBufferViews mode="segmentBakedNormalMapAppliedOnly" client:visible />
+  </div>
+</div> */}
+
 <div class="pixel-buffer-article">
   <div class="pixel-buffer-article__header">
     <div class="pixel-buffer-article__dots" aria-hidden="true">
@@ -91,6 +106,28 @@ import PixelArtBufferViews from "./PixelArtBufferViews";
     <PixelArtBufferViews mode="segmentIndentedAppliedOrbitOnly" client:visible />
   </div>
 </div>
+
+{/* <div class="pixel-buffer-article">
+  <div class="pixel-buffer-article__header">
+    <div class="pixel-buffer-article__dots" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <span>Baked Inset Normal Map</span>
+    <span>offline preview</span>
+  </div>
+  <div class="pixel-buffer-article__body pixel-buffer-article__body--pair">
+    <div class="pixel-buffer-article__subpanel pixel-buffer-article__subpanel--square">
+      <div class="pixel-buffer-article__subheader">Baked Texture</div>
+      <PixelArtBufferViews mode="segmentBakedNormalMapTextureOnly" showSegmentTexturePicker={true} client:visible />
+    </div>
+    <div class="pixel-buffer-article__subpanel">
+      <div class="pixel-buffer-article__subheader">Inset View-Space Normals</div>
+      <PixelArtBufferViews mode="segmentBakedNormalMapViewOnly" client:visible />
+    </div>
+  </div>
+</div> */}
 
 <style>
   .pixel-buffer-article {
@@ -137,6 +174,24 @@ import PixelArtBufferViews from "./PixelArtBufferViews";
 
   .pixel-buffer-article__body {
     padding: 0;
+  }
+
+  .pixel-buffer-article__body--pair {
+    display: grid;
+    grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+  }
+
+  .pixel-buffer-article__subpanel + .pixel-buffer-article__subpanel {
+    border-left: 1px solid var(--border);
+  }
+
+  .pixel-buffer-article__subheader {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
   }
 
   .pixel-buffer-article__body :global(.pixel-buffer-demo) {
@@ -218,6 +273,11 @@ import PixelArtBufferViews from "./PixelArtBufferViews";
   .pixel-buffer-article__body :global(.pixel-buffer-demo__viewport) {
     height: 15rem;
     background: #0b0f15;
+  }
+
+  .pixel-buffer-article__subpanel--square :global(.pixel-buffer-demo__viewport) {
+    height: 15rem;
+    aspect-ratio: 1;
   }
 
   .pixel-buffer-article__body :global(.pixel-buffer-demo__viewport--solo) {

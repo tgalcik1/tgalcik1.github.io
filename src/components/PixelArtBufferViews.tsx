@@ -16,6 +16,9 @@ type ViewMode =
   | "segmentIndentedLit"
   | "segmentIndentedApplied"
   | "segmentIndentedAppliedOrbit"
+  | "segmentBakedNormalMapTexture"
+  | "segmentBakedNormalMapView"
+  | "segmentBakedNormalMapApplied"
   | "combinedMask"
   | "depthEdges"
   | "normalEdges"
@@ -40,6 +43,9 @@ interface Props {
     | "segmentIndentedLitOnly"
     | "segmentIndentedAppliedOnly"
     | "segmentIndentedAppliedOrbitOnly"
+    | "segmentBakedNormalMapTextureOnly"
+    | "segmentBakedNormalMapViewOnly"
+    | "segmentBakedNormalMapAppliedOnly"
     | "combinedMaskOnly"
     | "objectIdOnly"
     | "objectIdEdgesOnly"
@@ -56,13 +62,24 @@ const SEGMENT_CELL_BEVEL_VIEW_MODES: ViewMode[] = ["segmentCellBevel"];
 const SEGMENT_EDGE_VIEW_MODES: ViewMode[] = ["segmentEdges"];
 const SEGMENT_INDENTED_VIEW_MODES: ViewMode[] = ["segmentIndented"];
 const SEGMENT_INDENTED_ORBIT_VIEW_MODES: ViewMode[] = ["segmentIndentedOrbit"];
-const SEGMENT_INDENTED_NORMAL_VIEW_MODES: ViewMode[] = ["segmentIndentedNormal"];
+const SEGMENT_INDENTED_NORMAL_VIEW_MODES: ViewMode[] = [
+  "segmentIndentedNormal",
+];
 const SEGMENT_INDENTED_LIT_VIEW_MODES: ViewMode[] = ["segmentIndentedLit"];
 const SEGMENT_INDENTED_APPLIED_VIEW_MODES: ViewMode[] = [
   "segmentIndentedApplied",
 ];
 const SEGMENT_INDENTED_APPLIED_ORBIT_VIEW_MODES: ViewMode[] = [
   "segmentIndentedAppliedOrbit",
+];
+const SEGMENT_BAKED_NORMAL_MAP_TEXTURE_VIEW_MODES: ViewMode[] = [
+  "segmentBakedNormalMapTexture",
+];
+const SEGMENT_BAKED_NORMAL_MAP_VIEW_MODES: ViewMode[] = [
+  "segmentBakedNormalMapView",
+];
+const SEGMENT_BAKED_NORMAL_MAP_APPLIED_VIEW_MODES: ViewMode[] = [
+  "segmentBakedNormalMapApplied",
 ];
 const COMBINED_MASK_VIEW_MODES: ViewMode[] = ["combinedMask"];
 const SEGMENT_TEXTURE_OPTIONS = [
@@ -127,6 +144,10 @@ const INSET_DIRECTION_STRENGTH = 1;
 const INSET_BASE_NORMAL_WEIGHT = 0.85;
 const INSET_LIT_THRESHOLD = 0.45;
 const INSET_DARKEN_STRENGTH = 0.4;
+const INSET_SMOOTH_FIELD = false;
+const BAKED_NORMAL_MAP_STRENGTH = 0.75;
+const BAKED_NORMAL_MAP_BLEND = 0.85;
+const BAKED_NORMAL_MAP_INSET_STRENGTH = 1;
 
 export default function PixelArtBufferViews({
   mode = "full",
@@ -154,12 +175,17 @@ export default function PixelArtBufferViews({
   const [insetBaseNormalWeight, setInsetBaseNormalWeight] = useState(
     INSET_BASE_NORMAL_WEIGHT,
   );
-  const [insetLitThreshold, setInsetLitThreshold] = useState(
-    INSET_LIT_THRESHOLD,
-  );
+  const [insetLitThreshold, setInsetLitThreshold] =
+    useState(INSET_LIT_THRESHOLD);
   const [insetDarkenStrength, setInsetDarkenStrength] = useState(
     INSET_DARKEN_STRENGTH,
   );
+  const [insetSmoothField, setInsetSmoothField] = useState(INSET_SMOOTH_FIELD);
+  const [bakedNormalMapBlend, setBakedNormalMapBlend] = useState(
+    BAKED_NORMAL_MAP_BLEND,
+  );
+  const [bakedNormalMapInsetStrength, setBakedNormalMapInsetStrength] =
+    useState(BAKED_NORMAL_MAP_INSET_STRENGTH);
   const [isRendererActive, setIsRendererActive] = useState(false);
   const insetControlsRef = useRef({
     fieldUnderlay: segmentFieldUnderlay,
@@ -167,6 +193,7 @@ export default function PixelArtBufferViews({
     baseNormalWeight: insetBaseNormalWeight,
     litThreshold: insetLitThreshold,
     darkenStrength: insetDarkenStrength,
+    smoothField: insetSmoothField,
   });
   insetControlsRef.current = {
     fieldUnderlay: segmentFieldUnderlay,
@@ -174,7 +201,12 @@ export default function PixelArtBufferViews({
     baseNormalWeight: insetBaseNormalWeight,
     litThreshold: insetLitThreshold,
     darkenStrength: insetDarkenStrength,
+    smoothField: insetSmoothField,
   };
+  const bakedNormalMapBlendRef = useRef(bakedNormalMapBlend);
+  bakedNormalMapBlendRef.current = bakedNormalMapBlend;
+  const bakedNormalMapInsetStrengthRef = useRef(bakedNormalMapInsetStrength);
+  bakedNormalMapInsetStrengthRef.current = bakedNormalMapInsetStrength;
   const rootRef = useRef<HTMLDivElement>(null);
   const colorRef = useRef<HTMLDivElement>(null);
   const depthRef = useRef<HTMLDivElement>(null);
@@ -189,6 +221,9 @@ export default function PixelArtBufferViews({
   const segmentIndentedLitRef = useRef<HTMLDivElement>(null);
   const segmentIndentedAppliedRef = useRef<HTMLDivElement>(null);
   const segmentIndentedAppliedOrbitRef = useRef<HTMLDivElement>(null);
+  const segmentBakedNormalMapTextureRef = useRef<HTMLDivElement>(null);
+  const segmentBakedNormalMapViewRef = useRef<HTMLDivElement>(null);
+  const segmentBakedNormalMapAppliedRef = useRef<HTMLDivElement>(null);
   const combinedMaskRef = useRef<HTMLDivElement>(null);
   const depthEdgesRef = useRef<HTMLDivElement>(null);
   const normalEdgesRef = useRef<HTMLDivElement>(null);
@@ -214,10 +249,26 @@ export default function PixelArtBufferViews({
     mode === "segmentIndentedLitOnly" ||
     mode === "segmentIndentedAppliedOnly" ||
     mode === "segmentIndentedAppliedOrbitOnly" ||
+    mode === "segmentBakedNormalMapTextureOnly" ||
+    mode === "segmentBakedNormalMapViewOnly" ||
+    mode === "segmentBakedNormalMapAppliedOnly" ||
     mode === "combinedMaskOnly";
   const segmentTextureDependency = usesSegmentTexture
     ? selectedSegmentTexture.id
     : "no-segment-texture";
+  const usesSegmentField =
+    mode === "segmentIndentedOnly" ||
+    mode === "segmentIndentedOrbitOnly" ||
+    mode === "segmentIndentedNormalOnly" ||
+    mode === "segmentIndentedLitOnly" ||
+    mode === "segmentIndentedAppliedOnly" ||
+    mode === "segmentIndentedAppliedOrbitOnly" ||
+    mode === "segmentBakedNormalMapTextureOnly" ||
+    mode === "segmentBakedNormalMapViewOnly" ||
+    mode === "segmentBakedNormalMapAppliedOnly";
+  const segmentFieldDependency = usesSegmentField
+    ? (insetSmoothField ? "smooth" : "quantized")
+    : "no-segment-field";
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -281,12 +332,17 @@ export default function PixelArtBufferViews({
       if (typeof next.darkenStrength === "number") {
         setInsetDarkenStrength(next.darkenStrength);
       }
+      if (typeof next.smoothField === "boolean") {
+        setInsetSmoothField(next.smoothField);
+      }
     };
 
     const stored = window.localStorage.getItem(INSET_CONTROLS_STORAGE_KEY);
     if (stored) {
       try {
-        applyControls(JSON.parse(stored) as Partial<typeof insetControlsRef.current>);
+        applyControls(
+          JSON.parse(stored) as Partial<typeof insetControlsRef.current>,
+        );
       } catch {
         window.localStorage.removeItem(INSET_CONTROLS_STORAGE_KEY);
       }
@@ -306,7 +362,9 @@ export default function PixelArtBufferViews({
       if (event.key !== INSET_CONTROLS_STORAGE_KEY || !event.newValue) return;
       try {
         applyControls(
-          JSON.parse(event.newValue) as Partial<typeof insetControlsRef.current>,
+          JSON.parse(event.newValue) as Partial<
+            typeof insetControlsRef.current
+          >,
         );
       } catch {
         window.localStorage.removeItem(INSET_CONTROLS_STORAGE_KEY);
@@ -369,7 +427,6 @@ export default function PixelArtBufferViews({
       augmentedBlendMaterialRef.current.uniforms.normalOutlineStrength.value =
         normalOutlineStrength;
     }
-
   }, [
     depthThreshold,
     depthOutlineStrength,
@@ -388,33 +445,39 @@ export default function PixelArtBufferViews({
             ? SEGMENT_VIEW_MODES
             : mode === "segmentCenterFieldOnly"
               ? SEGMENT_CENTER_FIELD_VIEW_MODES
-            : mode === "segmentCellBevelOnly"
-              ? SEGMENT_CELL_BEVEL_VIEW_MODES
-              : mode === "segmentEdgesOnly"
+              : mode === "segmentCellBevelOnly"
+                ? SEGMENT_CELL_BEVEL_VIEW_MODES
+                : mode === "segmentEdgesOnly"
                   ? SEGMENT_EDGE_VIEW_MODES
                   : mode === "segmentIndentedOnly"
                     ? SEGMENT_INDENTED_VIEW_MODES
-                  : mode === "segmentIndentedOrbitOnly"
-                    ? SEGMENT_INDENTED_ORBIT_VIEW_MODES
-                  : mode === "segmentIndentedNormalOnly"
-                    ? SEGMENT_INDENTED_NORMAL_VIEW_MODES
-                  : mode === "segmentIndentedLitOnly"
-                    ? SEGMENT_INDENTED_LIT_VIEW_MODES
-                  : mode === "segmentIndentedAppliedOnly"
-                    ? SEGMENT_INDENTED_APPLIED_VIEW_MODES
-                  : mode === "segmentIndentedAppliedOrbitOnly"
-                    ? SEGMENT_INDENTED_APPLIED_ORBIT_VIEW_MODES
-                  : mode === "combinedMaskOnly"
-                    ? COMBINED_MASK_VIEW_MODES
-                    : mode === "objectIdOnly"
-                      ? OBJECT_ID_VIEW_MODES
-                      : mode === "objectIdEdgesOnly"
-                        ? OBJECT_ID_EDGE_VIEW_MODES
-                        : mode === "augmentedBlendOnly"
-                          ? AUGMENTED_BLEND_VIEW_MODES
-                          : mode === "blendOnly"
-                            ? BLEND_VIEW_MODES
-                            : FULL_VIEW_MODES;
+                    : mode === "segmentIndentedOrbitOnly"
+                      ? SEGMENT_INDENTED_ORBIT_VIEW_MODES
+                      : mode === "segmentIndentedNormalOnly"
+                        ? SEGMENT_INDENTED_NORMAL_VIEW_MODES
+                        : mode === "segmentIndentedLitOnly"
+                          ? SEGMENT_INDENTED_LIT_VIEW_MODES
+                          : mode === "segmentIndentedAppliedOnly"
+                            ? SEGMENT_INDENTED_APPLIED_VIEW_MODES
+                            : mode === "segmentIndentedAppliedOrbitOnly"
+                              ? SEGMENT_INDENTED_APPLIED_ORBIT_VIEW_MODES
+                              : mode === "segmentBakedNormalMapTextureOnly"
+                                ? SEGMENT_BAKED_NORMAL_MAP_TEXTURE_VIEW_MODES
+                                : mode === "segmentBakedNormalMapViewOnly"
+                                  ? SEGMENT_BAKED_NORMAL_MAP_VIEW_MODES
+                                  : mode === "segmentBakedNormalMapAppliedOnly"
+                                    ? SEGMENT_BAKED_NORMAL_MAP_APPLIED_VIEW_MODES
+                                    : mode === "combinedMaskOnly"
+                                      ? COMBINED_MASK_VIEW_MODES
+                                      : mode === "objectIdOnly"
+                                        ? OBJECT_ID_VIEW_MODES
+                                        : mode === "objectIdEdgesOnly"
+                                          ? OBJECT_ID_EDGE_VIEW_MODES
+                                          : mode === "augmentedBlendOnly"
+                                            ? AUGMENTED_BLEND_VIEW_MODES
+                                            : mode === "blendOnly"
+                                              ? BLEND_VIEW_MODES
+                                              : FULL_VIEW_MODES;
 
     const mounts: Record<ViewMode, HTMLDivElement | null> = {
       color: colorRef.current,
@@ -430,6 +493,9 @@ export default function PixelArtBufferViews({
       segmentIndentedLit: segmentIndentedLitRef.current,
       segmentIndentedApplied: segmentIndentedAppliedRef.current,
       segmentIndentedAppliedOrbit: segmentIndentedAppliedOrbitRef.current,
+      segmentBakedNormalMapTexture: segmentBakedNormalMapTextureRef.current,
+      segmentBakedNormalMapView: segmentBakedNormalMapViewRef.current,
+      segmentBakedNormalMapApplied: segmentBakedNormalMapAppliedRef.current,
       combinedMask: combinedMaskRef.current,
       depthEdges: depthEdgesRef.current,
       normalEdges: normalEdgesRef.current,
@@ -491,8 +557,12 @@ export default function PixelArtBufferViews({
       segmentScalarTextureCache.set(key, texture);
       return texture;
     };
-    const generatedSegmentFieldTexture = (path: string) => {
-      const cachedTexture = generatedSegmentFieldCache.get(path);
+    const generatedSegmentFieldTexture = (
+      path: string,
+      smoothField = false,
+    ) => {
+      const cacheKey = `${path}:${smoothField ? "smooth" : "quantized"}`;
+      const cachedTexture = generatedSegmentFieldCache.get(cacheKey);
       if (cachedTexture) {
         return cachedTexture;
       }
@@ -511,7 +581,7 @@ export default function PixelArtBufferViews({
       texture.wrapT = THREE.RepeatWrapping;
       texture.flipY = false;
       texture.colorSpace = THREE.NoColorSpace;
-      generatedSegmentFieldCache.set(path, texture);
+      generatedSegmentFieldCache.set(cacheKey, texture);
 
       textureLoader.load(path, (loadedTexture) => {
         const image = loadedTexture.image as
@@ -541,11 +611,6 @@ export default function PixelArtBufferViews({
         }
 
         const size = width * height;
-        let nearestX = new Int32Array(size);
-        let nearestY = new Int32Array(size);
-        nearestX.fill(-1);
-        nearestY.fill(-1);
-
         const wrapX = (x: number) => ((x % width) + width) % width;
         const wrapY = (y: number) => ((y % height) + height) % height;
         const indexAt = (x: number, y: number) => wrapY(y) * width + wrapX(x);
@@ -555,135 +620,319 @@ export default function PixelArtBufferViews({
           if (delta < -half) return delta + size;
           return delta;
         };
-        const wrappedDistance = (
-          x1: number,
-          y1: number,
-          x2: number,
-          y2: number,
+        const componentId = new Int32Array(size);
+        componentId.fill(-1);
+        const unwrappedX = new Float32Array(size);
+        const unwrappedY = new Float32Array(size);
+        const queue = new Int32Array(size);
+        const componentPixels: number[][] = [];
+        const componentBoundaryPixels: number[][] = [];
+        const componentCenterX: number[] = [];
+        const componentCenterY: number[] = [];
+
+        let nextComponent = 0;
+        for (let start = 0; start < size; start += 1) {
+          if (componentId[start] >= 0) continue;
+
+          const startX = start % width;
+          const startY = Math.floor(start / width);
+          const targetId = ids[start];
+          const pixelsInComponent: number[] = [];
+          const boundaryPixels: number[] = [];
+          let head = 0;
+          let tail = 0;
+          let sumX = 0;
+          let sumY = 0;
+
+          componentId[start] = nextComponent;
+          unwrappedX[start] = startX + 0.5;
+          unwrappedY[start] = startY + 0.5;
+          queue[tail++] = start;
+
+          while (head < tail) {
+            const current = queue[head++];
+            const x = current % width;
+            const y = Math.floor(current / width);
+            const baseX = unwrappedX[current];
+            const baseY = unwrappedY[current];
+
+            pixelsInComponent.push(current);
+            sumX += baseX;
+            sumY += baseY;
+
+            let isBoundary = false;
+            const neighbors = [
+              [x - 1, y],
+              [x + 1, y],
+              [x, y - 1],
+              [x, y + 1],
+            ] as const;
+
+            for (const [nxRaw, nyRaw] of neighbors) {
+              const nx = wrapX(nxRaw);
+              const ny = wrapY(nyRaw);
+              const neighbor = indexAt(nx, ny);
+              if (ids[neighbor] !== targetId) {
+                isBoundary = true;
+                continue;
+              }
+              if (componentId[neighbor] >= 0) continue;
+
+              componentId[neighbor] = nextComponent;
+              unwrappedX[neighbor] = baseX + wrappedDelta(nx - x, width);
+              unwrappedY[neighbor] = baseY + wrappedDelta(ny - y, height);
+              queue[tail++] = neighbor;
+            }
+
+            if (isBoundary) {
+              boundaryPixels.push(current);
+            }
+          }
+
+          componentPixels[nextComponent] = pixelsInComponent;
+          componentBoundaryPixels[nextComponent] = boundaryPixels;
+          const safeCount = Math.max(pixelsInComponent.length, 1);
+          componentCenterX[nextComponent] = sumX / safeCount;
+          componentCenterY[nextComponent] = sumY / safeCount;
+          nextComponent += 1;
+        }
+
+        const cross = (
+          ox: number,
+          oy: number,
+          ax: number,
+          ay: number,
+          bx: number,
+          by: number,
+        ) => (ax - ox) * (by - oy) - (ay - oy) * (bx - ox);
+        const closestPointOnSegment = (
+          px: number,
+          py: number,
+          ax: number,
+          ay: number,
+          bx: number,
+          by: number,
         ) => {
-          const dx = wrappedDelta(x2 - x1, width);
-          const dy = wrappedDelta(y2 - y1, height);
-          return Math.hypot(dx, dy);
+          const dx = bx - ax;
+          const dy = by - ay;
+          const lengthSquared = dx * dx + dy * dy;
+          if (lengthSquared <= 1e-6) {
+            return {
+              x: ax,
+              y: ay,
+              distanceSquared: (px - ax) * (px - ax) + (py - ay) * (py - ay),
+            };
+          }
+          const t = THREE.MathUtils.clamp(
+            ((px - ax) * dx + (py - ay) * dy) / lengthSquared,
+            0,
+            1,
+          );
+          const qx = ax + dx * t;
+          const qy = ay + dy * t;
+          const ddx = px - qx;
+          const ddy = py - qy;
+          return {
+            x: qx,
+            y: qy,
+            distanceSquared: ddx * ddx + ddy * ddy,
+          };
         };
-        const isDifferent = (x1: number, y1: number, x2: number, y2: number) =>
-          ids[indexAt(x1, y1)] !== ids[indexAt(x2, y2)];
+        const buildConvexHull = (points: Array<{ x: number; y: number }>) => {
+          if (points.length <= 1) return points.slice();
 
-        for (let y = 0; y < height; y += 1) {
-          for (let x = 0; x < width; x += 1) {
-            const i = indexAt(x, y);
-            let boundary = false;
-            for (let oy = -1; oy <= 1 && !boundary; oy += 1) {
-              for (let ox = -1; ox <= 1; ox += 1) {
-                if (ox === 0 && oy === 0) continue;
-                const nx = wrapX(x + ox);
-                const ny = wrapY(y + oy);
-                if (isDifferent(x, y, nx, ny)) {
-                  boundary = true;
-                  break;
-                }
-              }
+          const sorted = [...points].sort((a, b) =>
+            a.x === b.x ? a.y - b.y : a.x - b.x,
+          );
+          const lower: Array<{ x: number; y: number }> = [];
+          for (const point of sorted) {
+            while (
+              lower.length >= 2 &&
+              cross(
+                lower[lower.length - 2].x,
+                lower[lower.length - 2].y,
+                lower[lower.length - 1].x,
+                lower[lower.length - 1].y,
+                point.x,
+                point.y,
+              ) <= 0
+            ) {
+              lower.pop();
             }
-            if (boundary) {
-              nearestX[i] = x;
-              nearestY[i] = y;
-            }
-          }
-        }
-
-        let step = 1;
-        while (step < Math.max(width, height)) step <<= 1;
-
-        const offsets = [
-          [-1, -1],
-          [0, -1],
-          [1, -1],
-          [-1, 0],
-          [0, 0],
-          [1, 0],
-          [-1, 1],
-          [0, 1],
-          [1, 1],
-        ] as const;
-
-        for (step >>= 1; step >= 1; step >>= 1) {
-          const nextX = new Int32Array(nearestX);
-          const nextY = new Int32Array(nearestY);
-
-          for (let y = 0; y < height; y += 1) {
-            for (let x = 0; x < width; x += 1) {
-              const i = indexAt(x, y);
-              let bestX = nearestX[i];
-              let bestY = nearestY[i];
-              let bestDistance =
-                bestX >= 0 ? Math.hypot(bestX - x, bestY - y) : Infinity;
-
-              for (const [ox, oy] of offsets) {
-                const sx = wrapX(x + ox * step);
-                const sy = wrapY(y + oy * step);
-                const si = indexAt(sx, sy);
-                const candidateX = nearestX[si];
-                const candidateY = nearestY[si];
-                if (candidateX < 0) continue;
-                const candidateDistance = wrappedDistance(
-                  x,
-                  y,
-                  candidateX,
-                  candidateY,
-                );
-                if (candidateDistance < bestDistance) {
-                  bestDistance = candidateDistance;
-                  bestX = candidateX;
-                  bestY = candidateY;
-                }
-              }
-
-              nextX[i] = bestX;
-              nextY[i] = bestY;
-            }
+            lower.push(point);
           }
 
-          nearestX = nextX;
-          nearestY = nextY;
-        }
-
-        const maxDistanceById = new Float32Array(256);
-        for (let i = 0; i < size; i += 1) {
-          const bx = nearestX[i];
-          const by = nearestY[i];
-          if (bx < 0) continue;
-          const x = i % width;
-          const y = Math.floor(i / width);
-          const distance = wrappedDistance(x, y, bx, by);
-          const id = ids[i];
-          if (distance > maxDistanceById[id]) {
-            maxDistanceById[id] = distance;
+          const upper: Array<{ x: number; y: number }> = [];
+          for (let i = sorted.length - 1; i >= 0; i -= 1) {
+            const point = sorted[i];
+            while (
+              upper.length >= 2 &&
+              cross(
+                upper[upper.length - 2].x,
+                upper[upper.length - 2].y,
+                upper[upper.length - 1].x,
+                upper[upper.length - 1].y,
+                point.x,
+                point.y,
+              ) <= 0
+            ) {
+              upper.pop();
+            }
+            upper.push(point);
           }
-        }
+
+          lower.pop();
+          upper.pop();
+          return lower.concat(upper);
+        };
 
         const field = new Uint8Array(size * 4);
-        for (let y = 0; y < height; y += 1) {
-          for (let x = 0; x < width; x += 1) {
-            const i = indexAt(x, y);
-            const px = i * 4;
-            const bx = nearestX[i];
-            const by = nearestY[i];
-            if (bx < 0) {
-              field[px] = 128;
-              field[px + 1] = 128;
-              field[px + 2] = 0;
-              field[px + 3] = 255;
+        for (let component = 0; component < nextComponent; component += 1) {
+          const pixelsInComponent = componentPixels[component] ?? [];
+          const boundaryPixels = componentBoundaryPixels[component] ?? [];
+          const centerX = componentCenterX[component];
+          const centerY = componentCenterY[component];
+          const uniqueBoundaryPoints = new Map<
+            string,
+            { x: number; y: number }
+          >();
+
+          for (const pixelIndex of boundaryPixels) {
+            const point = {
+              x: unwrappedX[pixelIndex],
+              y: unwrappedY[pixelIndex],
+            };
+            uniqueBoundaryPoints.set(`${point.x},${point.y}`, point);
+          }
+
+          const hull = buildConvexHull([...uniqueBoundaryPoints.values()]);
+          const edges: Array<{
+            ax: number;
+            ay: number;
+            bx: number;
+            by: number;
+            nx: number;
+            ny: number;
+          }> = [];
+
+          if (hull.length >= 2) {
+            for (let i = 0; i < hull.length; i += 1) {
+              const a = hull[i];
+              const b = hull[(i + 1) % hull.length];
+              const edgeX = b.x - a.x;
+              const edgeY = b.y - a.y;
+              const edgeLength = Math.hypot(edgeX, edgeY);
+              if (edgeLength <= 1e-6) continue;
+
+              let nx = -edgeY / edgeLength;
+              let ny = edgeX / edgeLength;
+              const midpointX = (a.x + b.x) * 0.5;
+              const midpointY = (a.y + b.y) * 0.5;
+              const towardCenter =
+                (centerX - midpointX) * nx + (centerY - midpointY) * ny;
+              if (towardCenter < 0) {
+                nx *= -1;
+                ny *= -1;
+              }
+
+              edges.push({
+                ax: a.x,
+                ay: a.y,
+                bx: b.x,
+                by: b.y,
+                nx,
+                ny,
+              });
+            }
+          }
+
+          const walls = edges;
+
+          let maxDistance = 1e-6;
+          const pixelDistances: number[] = new Array(
+            pixelsInComponent.length,
+          ).fill(0);
+          const pixelDirections: Array<{ x: number; y: number }> = new Array(
+            pixelsInComponent.length,
+          );
+
+          for (let i = 0; i < pixelsInComponent.length; i += 1) {
+            const pixelIndex = pixelsInComponent[i];
+            const px = unwrappedX[pixelIndex];
+            const py = unwrappedY[pixelIndex];
+
+            if (smoothField) {
+              const smoothDx = centerX - px;
+              const smoothDy = centerY - py;
+              const smoothLength = Math.hypot(smoothDx, smoothDy);
+              pixelDirections[i] =
+                smoothLength > 1e-6
+                  ? {
+                      x: smoothDx / smoothLength,
+                      y: smoothDy / smoothLength,
+                    }
+                  : { x: 0, y: 0 };
+              pixelDistances[i] = smoothLength;
+              if (smoothLength > maxDistance) {
+                maxDistance = smoothLength;
+              }
               continue;
             }
 
-            const dx = wrappedDelta(bx - x, width);
-            const dy = wrappedDelta(by - y, height);
-            const distance = Math.hypot(dx, dy);
-            const direction =
-              distance > 0.0001
-                ? new THREE.Vector2(dx / distance, dy / distance)
-                : new THREE.Vector2(0, 0);
-            const maxDistance = Math.max(maxDistanceById[ids[i]], 1);
-            const normalizedDistance = Math.min(distance / maxDistance, 1);
+            if (walls.length === 0) {
+              pixelDirections[i] = { x: 0, y: 0 };
+              pixelDistances[i] = 0;
+              continue;
+            }
+
+            let bestWall = walls[0];
+            let bestClosestPoint = closestPointOnSegment(
+              px,
+              py,
+              bestWall.ax,
+              bestWall.ay,
+              bestWall.bx,
+              bestWall.by,
+            );
+            let bestDistance = bestClosestPoint.distanceSquared;
+
+            for (let wallIndex = 1; wallIndex < walls.length; wallIndex += 1) {
+              const wall = walls[wallIndex];
+              const closestPoint = closestPointOnSegment(
+                px,
+                py,
+                wall.ax,
+                wall.ay,
+                wall.bx,
+                wall.by,
+              );
+              if (closestPoint.distanceSquared < bestDistance) {
+                bestDistance = closestPoint.distanceSquared;
+                bestWall = wall;
+                bestClosestPoint = closestPoint;
+              }
+            }
+
+            pixelDirections[i] = {
+              x: bestWall.nx,
+              y: bestWall.ny,
+            };
+            const distance = Math.sqrt(bestDistance);
+            pixelDistances[i] = distance;
+            if (distance > maxDistance) {
+              maxDistance = distance;
+            }
+          }
+
+          for (let i = 0; i < pixelsInComponent.length; i += 1) {
+            const pixelIndex = pixelsInComponent[i];
+            const px = pixelIndex * 4;
+            const direction = pixelDirections[i] ?? { x: 0, y: 0 };
+            const normalizedDistance = THREE.MathUtils.clamp(
+              pixelDistances[i] / maxDistance,
+              0,
+              1,
+            );
 
             field[px] = Math.round((direction.x * 0.5 + 0.5) * 255);
             field[px + 1] = Math.round((direction.y * 0.5 + 0.5) * 255);
@@ -711,8 +960,8 @@ export default function PixelArtBufferViews({
         1,
         THREE.RGBAFormat,
       );
-      texture.minFilter = THREE.LinearFilter;
-      texture.magFilter = THREE.LinearFilter;
+      texture.minFilter = THREE.NearestFilter;
+      texture.magFilter = THREE.NearestFilter;
       texture.generateMipmaps = false;
       texture.wrapS = THREE.RepeatWrapping;
       texture.wrapT = THREE.RepeatWrapping;
@@ -1022,7 +1271,7 @@ export default function PixelArtBufferViews({
 
         if (Math.abs(ny) > 0.5) {
           u = (px + halfWidth) / uvReference.width;
-          v = (pz + halfDepth) / uvReference.depth;
+          v = 1 - (pz + halfDepth) / uvReference.depth;
         } else if (Math.abs(nx) > 0.5) {
           u = (pz + halfDepth) / uvReference.depth;
           v = (py + halfHeight) / uvReference.height;
@@ -1120,6 +1369,47 @@ export default function PixelArtBufferViews({
           vec2 duv1 = dFdx(vSurfaceUv);
           vec2 duv2 = dFdy(vSurfaceUv);
           vec3 n = normalize(vWorldNormal);
+
+          vec3 dp2perp = cross(dp2, n);
+          vec3 dp1perp = cross(n, dp1);
+          vec3 tangent = dp2perp * duv1.x + dp1perp * duv2.x;
+          vec3 bitangent = dp2perp * duv1.y + dp1perp * duv2.y;
+
+          float invmax = inversesqrt(max(dot(tangent, tangent), dot(bitangent, bitangent)));
+          tangent = normalize(tangent * invmax);
+
+          gl_FragColor = vec4(tangent * 0.5 + 0.5, 1.0);
+        }
+      `,
+    });
+    const viewTangentMaterial = new THREE.ShaderMaterial({
+      extensions: {
+        derivatives: true,
+      },
+      vertexShader: `
+        varying vec3 vViewPosition;
+        varying vec3 vViewNormal;
+        varying vec2 vSurfaceUv;
+
+        void main() {
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          vViewPosition = mvPosition.xyz;
+          vViewNormal = normalize(normalMatrix * normal);
+          vSurfaceUv = uv;
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vViewPosition;
+        varying vec3 vViewNormal;
+        varying vec2 vSurfaceUv;
+
+        void main() {
+          vec3 dp1 = dFdx(vViewPosition);
+          vec3 dp2 = dFdy(vViewPosition);
+          vec2 duv1 = dFdx(vSurfaceUv);
+          vec2 duv2 = dFdy(vSurfaceUv);
+          vec3 n = normalize(vViewNormal);
 
           vec3 dp2perp = cross(dp2, n);
           vec3 dp1perp = cross(n, dp1);
@@ -2390,11 +2680,10 @@ export default function PixelArtBufferViews({
         tSegmentMask: { value: null },
         tSegmentField: { value: null },
         tNormals: { value: null },
+        tTangents: { value: null },
         texelSize: { value: new THREE.Vector2(1, 1) },
         directionStrength: { value: insetDirectionStrength },
         baseNormalWeight: { value: insetBaseNormalWeight },
-        cameraRight: { value: new THREE.Vector3(1, 0, 0) },
-        cameraUp: { value: new THREE.Vector3(0, 1, 0) },
       },
       vertexShader: `
         varying vec2 vUv;
@@ -2409,11 +2698,10 @@ export default function PixelArtBufferViews({
         uniform sampler2D tSegmentMask;
         uniform sampler2D tSegmentField;
         uniform sampler2D tNormals;
+        uniform sampler2D tTangents;
         uniform vec2 texelSize;
         uniform float directionStrength;
         uniform float baseNormalWeight;
-        uniform vec3 cameraRight;
-        uniform vec3 cameraUp;
 
         varying vec2 vUv;
 
@@ -2425,10 +2713,8 @@ export default function PixelArtBufferViews({
           return normalize(texture2D(tNormals, uv).xyz * 2.0 - 1.0);
         }
 
-        vec3 projectedAxis(vec3 axis, vec3 n) {
-          vec3 projected = axis - n * dot(n, axis);
-          float len = length(projected);
-          return len > 0.0001 ? projected / len : vec3(0.0);
+        vec3 sampleTangent(vec2 uv) {
+          return normalize(texture2D(tTangents, uv).xyz * 2.0 - 1.0);
         }
 
         vec3 linearToSRGB(vec3 color) {
@@ -2458,14 +2744,14 @@ export default function PixelArtBufferViews({
 
           vec2 fieldDirection = -(texture2D(tSegmentField, vUv).xy * 2.0 - 1.0);
           vec3 baseNormal = sampleNormal(vUv);
-          vec3 tangent = projectedAxis(cameraRight, baseNormal);
-          vec3 bitangent = projectedAxis(cameraUp, baseNormal);
+          vec3 tangent = sampleTangent(vUv);
+          tangent = normalize(tangent - baseNormal * dot(baseNormal, tangent));
           if (length(tangent) < 0.0001) {
-            tangent = normalize(cross(cameraUp, baseNormal));
+            tangent = normalize(cross(vec3(0.0, 1.0, 0.0), baseNormal));
           }
-          bitangent = normalize(bitangent - tangent * dot(tangent, bitangent));
+          vec3 bitangent = normalize(cross(baseNormal, tangent));
           if (length(bitangent) < 0.0001) {
-            bitangent = normalize(cross(baseNormal, tangent));
+            bitangent = normalize(cross(tangent, baseNormal));
           }
           vec3 derivedNormal = normalize(
             tangent * fieldDirection.x * directionStrength +
@@ -2485,13 +2771,12 @@ export default function PixelArtBufferViews({
         tSegmentMask: { value: null },
         tSegmentField: { value: null },
         tNormals: { value: null },
+        tTangents: { value: null },
         texelSize: { value: new THREE.Vector2(1, 1) },
         lightDirection: { value: new THREE.Vector3(0.6, 0.6, 0.4) },
         directionStrength: { value: insetDirectionStrength },
         baseNormalWeight: { value: insetBaseNormalWeight },
         litThreshold: { value: insetLitThreshold },
-        cameraRight: { value: new THREE.Vector3(1, 0, 0) },
-        cameraUp: { value: new THREE.Vector3(0, 1, 0) },
       },
       vertexShader: `
         varying vec2 vUv;
@@ -2506,13 +2791,12 @@ export default function PixelArtBufferViews({
         uniform sampler2D tSegmentMask;
         uniform sampler2D tSegmentField;
         uniform sampler2D tNormals;
+        uniform sampler2D tTangents;
         uniform vec2 texelSize;
         uniform vec3 lightDirection;
         uniform float directionStrength;
         uniform float baseNormalWeight;
         uniform float litThreshold;
-        uniform vec3 cameraRight;
-        uniform vec3 cameraUp;
 
         varying vec2 vUv;
 
@@ -2524,10 +2808,8 @@ export default function PixelArtBufferViews({
           return normalize(texture2D(tNormals, uv).xyz * 2.0 - 1.0);
         }
 
-        vec3 projectedAxis(vec3 axis, vec3 n) {
-          vec3 projected = axis - n * dot(n, axis);
-          float len = length(projected);
-          return len > 0.0001 ? projected / len : vec3(0.0);
+        vec3 sampleTangent(vec2 uv) {
+          return normalize(texture2D(tTangents, uv).xyz * 2.0 - 1.0);
         }
 
         vec3 linearToSRGB(vec3 color) {
@@ -2557,14 +2839,14 @@ export default function PixelArtBufferViews({
 
           vec2 bevelDirection = -(texture2D(tSegmentField, vUv).xy * 2.0 - 1.0);
           vec3 baseNormal = sampleNormal(vUv);
-          vec3 tangent = projectedAxis(cameraRight, baseNormal);
-          vec3 bitangent = projectedAxis(cameraUp, baseNormal);
+          vec3 tangent = sampleTangent(vUv);
+          tangent = normalize(tangent - baseNormal * dot(baseNormal, tangent));
           if (length(tangent) < 0.0001) {
-            tangent = normalize(cross(cameraUp, baseNormal));
+            tangent = normalize(cross(vec3(0.0, 1.0, 0.0), baseNormal));
           }
-          bitangent = normalize(bitangent - tangent * dot(tangent, bitangent));
+          vec3 bitangent = normalize(cross(baseNormal, tangent));
           if (length(bitangent) < 0.0001) {
-            bitangent = normalize(cross(baseNormal, tangent));
+            bitangent = normalize(cross(tangent, baseNormal));
           }
           float bevelMask = inset;
           vec3 bevelNormal = normalize(
@@ -2593,14 +2875,13 @@ export default function PixelArtBufferViews({
         tSegmentMask: { value: null },
         tSegmentField: { value: null },
         tNormals: { value: null },
+        tTangents: { value: null },
         texelSize: { value: new THREE.Vector2(1, 1) },
         lightDirection: { value: new THREE.Vector3(0.6, 0.6, 0.4) },
         directionStrength: { value: insetDirectionStrength },
         baseNormalWeight: { value: insetBaseNormalWeight },
         litThreshold: { value: insetLitThreshold },
         darkenStrength: { value: insetDarkenStrength },
-        cameraRight: { value: new THREE.Vector3(1, 0, 0) },
-        cameraUp: { value: new THREE.Vector3(0, 1, 0) },
       },
       vertexShader: `
         varying vec2 vUv;
@@ -2615,14 +2896,13 @@ export default function PixelArtBufferViews({
         uniform sampler2D tSegmentMask;
         uniform sampler2D tSegmentField;
         uniform sampler2D tNormals;
+        uniform sampler2D tTangents;
         uniform vec2 texelSize;
         uniform vec3 lightDirection;
         uniform float directionStrength;
         uniform float baseNormalWeight;
         uniform float litThreshold;
         uniform float darkenStrength;
-        uniform vec3 cameraRight;
-        uniform vec3 cameraUp;
 
         varying vec2 vUv;
 
@@ -2634,10 +2914,8 @@ export default function PixelArtBufferViews({
           return normalize(texture2D(tNormals, uv).xyz * 2.0 - 1.0);
         }
 
-        vec3 projectedAxis(vec3 axis, vec3 n) {
-          vec3 projected = axis - n * dot(n, axis);
-          float len = length(projected);
-          return len > 0.0001 ? projected / len : vec3(0.0);
+        vec3 sampleTangent(vec2 uv) {
+          return normalize(texture2D(tTangents, uv).xyz * 2.0 - 1.0);
         }
 
         vec3 linearToSRGB(vec3 color) {
@@ -2667,14 +2945,14 @@ export default function PixelArtBufferViews({
 
           vec2 bevelDirection = -(texture2D(tSegmentField, vUv).xy * 2.0 - 1.0);
           vec3 baseNormal = sampleNormal(vUv);
-          vec3 tangent = projectedAxis(cameraRight, baseNormal);
-          vec3 bitangent = projectedAxis(cameraUp, baseNormal);
+          vec3 tangent = sampleTangent(vUv);
+          tangent = normalize(tangent - baseNormal * dot(baseNormal, tangent));
           if (length(tangent) < 0.0001) {
-            tangent = normalize(cross(cameraUp, baseNormal));
+            tangent = normalize(cross(vec3(0.0, 1.0, 0.0), baseNormal));
           }
-          bitangent = normalize(bitangent - tangent * dot(tangent, bitangent));
+          vec3 bitangent = normalize(cross(baseNormal, tangent));
           if (length(bitangent) < 0.0001) {
-            bitangent = normalize(cross(baseNormal, tangent));
+            bitangent = normalize(cross(tangent, baseNormal));
           }
           vec3 bevelNormal = normalize(
             tangent * bevelDirection.x * directionStrength +
@@ -2686,6 +2964,248 @@ export default function PixelArtBufferViews({
           float magenta = inset * step(litThreshold, bevelLight);
           vec3 litColor = min(color * (1.0 + 0.55 * magenta), vec3(1.0));
           vec3 result = mix(litColor, litColor * darkenStrength, blue);
+          gl_FragColor = vec4(linearToSRGB(clamp(result, 0.0, 1.0)), 1.0);
+        }
+      `,
+    });
+    const segmentBakedNormalMapTexturePreviewMaterial =
+      new THREE.ShaderMaterial({
+        uniforms: {
+          tField: {
+            value: generatedSegmentFieldTexture(selectedSegmentTexture.path),
+          },
+          normalStrength: { value: BAKED_NORMAL_MAP_STRENGTH },
+        },
+        vertexShader: `
+        varying vec2 vUv;
+
+        void main() {
+          vUv = uv;
+          gl_Position = vec4(position.xy, 0.0, 1.0);
+        }
+      `,
+        fragmentShader: `
+        uniform sampler2D tField;
+        uniform float normalStrength;
+
+        varying vec2 vUv;
+
+        void main() {
+          vec2 direction = texture2D(tField, vUv).xy * 2.0 - 1.0;
+          vec2 xy = direction * normalStrength;
+          float z = sqrt(max(0.0, 1.0 - clamp(dot(xy, xy), 0.0, 1.0)));
+          vec3 tangentNormal = normalize(vec3(xy, z));
+          gl_FragColor = vec4(tangentNormal * 0.5 + 0.5, 1.0);
+        }
+      `,
+      });
+    const segmentBakedNormalMapViewMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        tColor: { value: null },
+        tSegmentMask: { value: null },
+        tParticipation: { value: null },
+        tBakedNormalMap: { value: null },
+        tNormals: { value: null },
+        tTangents: { value: null },
+        texelSize: { value: new THREE.Vector2(1, 1) },
+        blend: { value: bakedNormalMapBlend },
+        insetStrength: { value: bakedNormalMapInsetStrength },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+
+        void main() {
+          vUv = uv;
+          gl_Position = vec4(position.xy, 0.0, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D tSegmentMask;
+        uniform sampler2D tParticipation;
+        uniform sampler2D tBakedNormalMap;
+        uniform sampler2D tNormals;
+        uniform sampler2D tTangents;
+        uniform vec2 texelSize;
+        uniform float blend;
+        uniform float insetStrength;
+
+        varying vec2 vUv;
+
+        float sampleBlue(vec2 uv) {
+          return texture2D(tSegmentMask, uv).b;
+        }
+
+        float sampleParticipation(vec2 uv) {
+          return texture2D(tParticipation, uv).r;
+        }
+
+        vec3 sampleNormal(vec2 uv) {
+          return normalize(texture2D(tNormals, uv).xyz * 2.0 - 1.0);
+        }
+
+        vec3 sampleTangent(vec2 uv) {
+          return normalize(texture2D(tTangents, uv).xyz * 2.0 - 1.0);
+        }
+
+        void main() {
+          vec2 uvLeft = clamp(vUv + vec2(-texelSize.x, 0.0), vec2(0.0), vec2(1.0));
+          vec2 uvRight = clamp(vUv + vec2(texelSize.x, 0.0), vec2(0.0), vec2(1.0));
+          vec2 uvUp = clamp(vUv + vec2(0.0, texelSize.y), vec2(0.0), vec2(1.0));
+          vec2 uvDown = clamp(vUv + vec2(0.0, -texelSize.y), vec2(0.0), vec2(1.0));
+
+          float blue = sampleBlue(vUv);
+          float blueLeft = sampleBlue(uvLeft);
+          float blueRight = sampleBlue(uvRight);
+          float blueUp = sampleBlue(uvUp);
+          float blueDown = sampleBlue(uvDown);
+          float participation = sampleParticipation(vUv);
+          float participationLeft = sampleParticipation(uvLeft);
+          float participationRight = sampleParticipation(uvRight);
+          float participationUp = sampleParticipation(uvUp);
+          float participationDown = sampleParticipation(uvDown);
+          float inset = step(0.0001, participation)
+            * (1.0 - step(0.0001, blue))
+            * step(
+              0.0001,
+              max(
+                max(blueLeft * participationLeft, blueRight * participationRight),
+                max(blueUp * participationUp, blueDown * participationDown)
+              )
+            );
+
+          vec3 baseNormal = sampleNormal(vUv);
+          vec3 basePreview = baseNormal * 0.5 + 0.5;
+          vec3 tangent = sampleTangent(vUv);
+          tangent = normalize(tangent - baseNormal * dot(baseNormal, tangent));
+          vec3 bitangent = normalize(cross(baseNormal, tangent));
+          vec3 tangentNormal = normalize(texture2D(tBakedNormalMap, vUv).xyz * 2.0 - 1.0);
+          vec3 viewNormal = normalize(
+            tangent * tangentNormal.x +
+            bitangent * tangentNormal.y +
+            baseNormal * tangentNormal.z
+          );
+          vec3 insetPreview = mix(basePreview, viewNormal * 0.5 + 0.5, blend);
+          float effectMask = mix(
+            step(0.0001, participation),
+            inset,
+            clamp(insetStrength, 0.0, 1.0)
+          );
+          vec3 preview = mix(basePreview, insetPreview, effectMask);
+          gl_FragColor = vec4(preview, 1.0);
+        }
+      `,
+    });
+    const segmentBakedNormalMapAppliedMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        tColor: { value: null },
+        tSegmentMask: { value: null },
+        tParticipation: { value: null },
+        tBakedNormalMap: { value: null },
+        tNormals: { value: null },
+        tTangents: { value: null },
+        texelSize: { value: new THREE.Vector2(1, 1) },
+        lightDirection: { value: new THREE.Vector3(0.6, 0.6, 0.4) },
+        blend: { value: bakedNormalMapBlend },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+
+        void main() {
+          vUv = uv;
+          gl_Position = vec4(position.xy, 0.0, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D tColor;
+        uniform sampler2D tSegmentMask;
+        uniform sampler2D tParticipation;
+        uniform sampler2D tBakedNormalMap;
+        uniform sampler2D tNormals;
+        uniform sampler2D tTangents;
+        uniform vec2 texelSize;
+        uniform vec3 lightDirection;
+        uniform float blend;
+
+        varying vec2 vUv;
+
+        float sampleBlue(vec2 uv) {
+          return texture2D(tSegmentMask, uv).b;
+        }
+
+        float sampleParticipation(vec2 uv) {
+          return texture2D(tParticipation, uv).r;
+        }
+
+        vec3 sampleNormal(vec2 uv) {
+          return normalize(texture2D(tNormals, uv).xyz * 2.0 - 1.0);
+        }
+
+        vec3 sampleTangent(vec2 uv) {
+          return normalize(texture2D(tTangents, uv).xyz * 2.0 - 1.0);
+        }
+
+        vec3 linearToSRGB(vec3 color) {
+          vec3 cutoff = step(color, vec3(0.0031308));
+          vec3 lower = color * 12.92;
+          vec3 upper = 1.055 * pow(max(color, vec3(0.0)), vec3(1.0 / 2.4)) - 0.055;
+          return mix(upper, lower, cutoff);
+        }
+
+        void main() {
+          vec2 uvLeft = clamp(vUv + vec2(-texelSize.x, 0.0), vec2(0.0), vec2(1.0));
+          vec2 uvRight = clamp(vUv + vec2(texelSize.x, 0.0), vec2(0.0), vec2(1.0));
+          vec2 uvUp = clamp(vUv + vec2(0.0, texelSize.y), vec2(0.0), vec2(1.0));
+          vec2 uvDown = clamp(vUv + vec2(0.0, -texelSize.y), vec2(0.0), vec2(1.0));
+
+          float blue = sampleBlue(vUv);
+          float blueLeft = sampleBlue(uvLeft);
+          float blueRight = sampleBlue(uvRight);
+          float blueUp = sampleBlue(uvUp);
+          float blueDown = sampleBlue(uvDown);
+          float participation = sampleParticipation(vUv);
+          float participationLeft = sampleParticipation(uvLeft);
+          float participationRight = sampleParticipation(uvRight);
+          float participationUp = sampleParticipation(uvUp);
+          float participationDown = sampleParticipation(uvDown);
+          float inset = step(0.0001, participation)
+            * (1.0 - step(0.0001, blue))
+            * step(
+              0.0001,
+              max(
+                max(blueLeft * participationLeft, blueRight * participationRight),
+                max(blueUp * participationUp, blueDown * participationDown)
+              )
+            );
+
+          vec3 color = texture2D(tColor, vUv).rgb;
+          vec3 lightDir = normalize(lightDirection);
+          vec3 baseNormal = sampleNormal(vUv);
+          vec3 tangent = sampleTangent(vUv);
+          tangent = normalize(tangent - baseNormal * dot(baseNormal, tangent));
+          vec3 bitangent = normalize(cross(baseNormal, tangent));
+          vec3 tangentNormal = normalize(texture2D(tBakedNormalMap, vUv).xyz * 2.0 - 1.0);
+          vec3 mappedNormal = normalize(
+            tangent * tangentNormal.x +
+            bitangent * tangentNormal.y +
+            baseNormal * tangentNormal.z
+          );
+
+          vec2 tangentLight = vec2(
+            dot(lightDir, tangent),
+            dot(lightDir, bitangent)
+          );
+          float tangentLightLength = length(tangentLight);
+          vec2 lightDir2D = tangentLightLength > 0.0001
+            ? tangentLight / tangentLightLength
+            : vec2(0.0);
+          vec2 wallDir = length(tangentNormal.xy) > 0.0001
+            ? normalize(tangentNormal.xy)
+            : vec2(0.0);
+          float wallFacing = dot(wallDir, lightDir2D);
+          float bevelMask = step(0.35, wallFacing) * step(0.0001, tangentLightLength);
+          float lightScale = 1.0 + bevelMask * 0.65;
+          vec3 applied = color * lightScale;
+          vec3 result = mix(color, mix(color, applied, blend), inset);
           gl_FragColor = vec4(linearToSRGB(clamp(result, 0.0, 1.0)), 1.0);
         }
       `,
@@ -2776,6 +3296,11 @@ export default function PixelArtBufferViews({
       material: THREE.Material | THREE.Material[];
       bevelMaterial: THREE.Material | THREE.Material[];
     }> = [];
+    const segmentBakedNormalMapEntries: Array<{
+      mesh: THREE.Mesh;
+      material: THREE.Material | THREE.Material[];
+      bakedNormalMapMaterial: THREE.Material | THREE.Material[];
+    }> = [];
     const segmentCellBevelMaterials: THREE.ShaderMaterial[] = [];
     const disposableModelMaterials: THREE.Material[] = [];
     const disposableModelGeometries = new Set<THREE.BufferGeometry>();
@@ -2792,6 +3317,8 @@ export default function PixelArtBufferViews({
     let standaloneSegmentMaskTarget: THREE.WebGLRenderTarget | null = null;
     let standaloneSegmentFieldTarget: THREE.WebGLRenderTarget | null = null;
     let standaloneSegmentParticipationTarget: THREE.WebGLRenderTarget | null =
+      null;
+    let standaloneSegmentBakedNormalMapTarget: THREE.WebGLRenderTarget | null =
       null;
 
     const baseCameraPosition = new THREE.Vector3(
@@ -2864,7 +3391,10 @@ export default function PixelArtBufferViews({
       encodeSrgb: boolean,
     ) => {
       upscaleMaterial.uniforms.tInput.value = target.texture;
-      upscaleMaterial.uniforms.textureSize.value.set(target.width, target.height);
+      upscaleMaterial.uniforms.textureSize.value.set(
+        target.width,
+        target.height,
+      );
       upscaleMaterial.uniforms.encodeSrgb.value = encodeSrgb ? 1 : 0;
       renderer.setRenderTarget(null);
       renderer.render(upscaleScene, postCamera);
@@ -2915,20 +3445,24 @@ export default function PixelArtBufferViews({
       color: "#000000",
     });
 
-    const createSegmentFieldMaterial = (
+    const getRepeatedSegmentFieldTexture = (
       fieldTexturePath: string,
       repeatX: number,
       repeatY: number,
+      smoothField = false,
     ) => {
-      const textureKey = `${fieldTexturePath}:${repeatX}:${repeatY}`;
+      const textureKey = `${fieldTexturePath}:${repeatX}:${repeatY}:${smoothField ? "smooth" : "quantized"}`;
       let repeatedFieldTexture =
         repeatedSegmentFieldTextureCache.get(textureKey);
 
       if (!repeatedFieldTexture) {
-        repeatedFieldTexture = generatedSegmentFieldTexture(fieldTexturePath);
+        repeatedFieldTexture = generatedSegmentFieldTexture(
+          fieldTexturePath,
+          smoothField,
+        );
         repeatedFieldTexture = repeatedFieldTexture.clone();
-        repeatedFieldTexture.minFilter = THREE.LinearFilter;
-        repeatedFieldTexture.magFilter = THREE.LinearFilter;
+        repeatedFieldTexture.minFilter = THREE.NearestFilter;
+        repeatedFieldTexture.magFilter = THREE.NearestFilter;
         repeatedFieldTexture.generateMipmaps = false;
         repeatedFieldTexture.wrapS = THREE.RepeatWrapping;
         repeatedFieldTexture.wrapT = THREE.RepeatWrapping;
@@ -2938,9 +3472,66 @@ export default function PixelArtBufferViews({
         repeatedSegmentFieldTextureCache.set(textureKey, repeatedFieldTexture);
       }
 
+      return repeatedFieldTexture;
+    };
+
+    const createSegmentFieldMaterial = (
+      fieldTexturePath: string,
+      repeatX: number,
+      repeatY: number,
+    ) => {
+      const repeatedFieldTexture = getRepeatedSegmentFieldTexture(
+        fieldTexturePath,
+        repeatX,
+        repeatY,
+        insetControlsRef.current.smoothField,
+      );
+
       return new THREE.MeshBasicMaterial({
         map: repeatedFieldTexture,
         color: "#ffffff",
+      });
+    };
+    const createSegmentBakedNormalMapMaterial = (
+      fieldTexturePath: string,
+      repeatX: number,
+      repeatY: number,
+    ) => {
+      const repeatedFieldTexture = getRepeatedSegmentFieldTexture(
+        fieldTexturePath,
+        repeatX,
+        repeatY,
+      );
+      return new THREE.ShaderMaterial({
+        uniforms: {
+          tField: { value: repeatedFieldTexture },
+          normalStrength: { value: BAKED_NORMAL_MAP_STRENGTH },
+          segmentRepeat: { value: new THREE.Vector2(repeatX, repeatY) },
+        },
+        vertexShader: `
+          varying vec2 vUv;
+
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform sampler2D tField;
+          uniform float normalStrength;
+          uniform vec2 segmentRepeat;
+
+          varying vec2 vUv;
+
+          void main() {
+            vec2 tiledUv = fract(vUv * segmentRepeat);
+            vec2 direction = texture2D(tField, tiledUv).xy * 2.0 - 1.0;
+            vec2 xy = direction * normalStrength;
+            float z = sqrt(max(0.0, 1.0 - clamp(dot(xy, xy), 0.0, 1.0)));
+            vec3 tangentNormal = normalize(vec3(xy, z));
+            gl_FragColor = vec4(tangentNormal * 0.5 + 0.5, 1.0);
+          }
+        `,
       });
     };
     const createSegmentCenterFieldMaterial = (
@@ -3104,6 +3695,24 @@ export default function PixelArtBufferViews({
       2 * segmentRepeatScale,
       2 * segmentRepeatScale,
     );
+    const segmentPedestalBakedNormalMapMaterial =
+      createSegmentBakedNormalMapMaterial(
+        selectedSegmentTexture.path,
+        4 * segmentRepeatScale,
+        4 * segmentRepeatScale,
+      );
+    const segmentFloorBakedNormalMapMaterial =
+      createSegmentBakedNormalMapMaterial(
+        selectedSegmentTexture.path,
+        7 * segmentRepeatScale,
+        7 * segmentRepeatScale,
+      );
+    const segmentPillarBakedNormalMapMaterial =
+      createSegmentBakedNormalMapMaterial(
+        selectedSegmentTexture.path,
+        2 * segmentRepeatScale,
+        2 * segmentRepeatScale,
+      );
 
     const crystalMaterial = new THREE.MeshStandardMaterial({
       color: "#7dd3fc",
@@ -3197,6 +3806,18 @@ export default function PixelArtBufferViews({
         segmentPedestalBevelMaterial,
       ],
     });
+    segmentBakedNormalMapEntries.push({
+      mesh: pedestal,
+      material: pedestal.material,
+      bakedNormalMapMaterial: [
+        segmentPedestalBakedNormalMapMaterial,
+        segmentPedestalBakedNormalMapMaterial,
+        segmentPedestalBakedNormalMapMaterial,
+        segmentDisabledMaterial,
+        segmentPedestalBakedNormalMapMaterial,
+        segmentPedestalBakedNormalMapMaterial,
+      ],
+    });
 
     const floor = new THREE.Mesh(
       new THREE.PlaneGeometry(7, 7),
@@ -3239,6 +3860,11 @@ export default function PixelArtBufferViews({
       mesh: floor,
       material: floor.material,
       bevelMaterial: segmentFloorBevelMaterial,
+    });
+    segmentBakedNormalMapEntries.push({
+      mesh: floor,
+      material: floor.material,
+      bakedNormalMapMaterial: segmentFloorBakedNormalMapMaterial,
     });
 
     const addColumn = (x: number, z: number, height: number, rotation = 0) => {
@@ -3285,6 +3911,11 @@ export default function PixelArtBufferViews({
         material: mesh.material,
         bevelMaterial: segmentPillarBevelMaterial,
       });
+      segmentBakedNormalMapEntries.push({
+        mesh,
+        material: mesh.material,
+        bakedNormalMapMaterial: segmentPillarBakedNormalMapMaterial,
+      });
       return mesh;
     };
 
@@ -3327,6 +3958,11 @@ export default function PixelArtBufferViews({
       mesh: crystal,
       material: crystal.material,
       fieldMaterial: segmentDisabledMaterial,
+    });
+    segmentBakedNormalMapEntries.push({
+      mesh: crystal,
+      material: crystal.material,
+      bakedNormalMapMaterial: segmentDisabledMaterial,
     });
 
     const ambient = new THREE.AmbientLight(ambientColor, 1.35);
@@ -3407,6 +4043,11 @@ export default function PixelArtBufferViews({
           material: object.material,
           fieldMaterial: segmentDisabledMaterial,
         });
+        segmentBakedNormalMapEntries.push({
+          mesh: object,
+          material: object.material,
+          bakedNormalMapMaterial: segmentDisabledMaterial,
+        });
       });
 
       scene.add(torusKnotRoot);
@@ -3425,7 +4066,10 @@ export default function PixelArtBufferViews({
 
       configureCamera(camera, mount.clientWidth, mount.clientHeight);
 
-      if (activeMode === "segmentIndentedNormal" && !loggedSegmentIndentedNormalSetup) {
+      if (
+        activeMode === "segmentIndentedNormal" &&
+        !loggedSegmentIndentedNormalSetup
+      ) {
         console.log("segmentIndentedNormal setup", {
           width: mount.clientWidth,
           height: mount.clientHeight,
@@ -3463,7 +4107,9 @@ export default function PixelArtBufferViews({
         activeMode === "segmentIndentedNormal" ||
         activeMode === "segmentIndentedLit" ||
         activeMode === "segmentIndentedApplied" ||
-        activeMode === "segmentIndentedAppliedOrbit"
+        activeMode === "segmentIndentedAppliedOrbit" ||
+        activeMode === "segmentBakedNormalMapView" ||
+        activeMode === "segmentBakedNormalMapApplied"
       ) {
         const depthTexture = new THREE.DepthTexture(1, 1);
         depthTexture.minFilter = THREE.NearestFilter;
@@ -3485,7 +4131,9 @@ export default function PixelArtBufferViews({
           activeMode === "segmentIndentedNormal" ||
           activeMode === "segmentIndentedLit" ||
           activeMode === "segmentIndentedApplied" ||
-          activeMode === "segmentIndentedAppliedOrbit"
+          activeMode === "segmentIndentedAppliedOrbit" ||
+          activeMode === "segmentBakedNormalMapView" ||
+          activeMode === "segmentBakedNormalMapApplied"
         ) {
           const segmentObjectIdTarget = new THREE.WebGLRenderTarget(1, 1);
           segmentObjectIdTarget.texture.minFilter = THREE.NearestFilter;
@@ -3511,7 +4159,9 @@ export default function PixelArtBufferViews({
             activeMode === "segmentIndentedNormal" ||
             activeMode === "segmentIndentedLit" ||
             activeMode === "segmentIndentedApplied" ||
-            activeMode === "segmentIndentedAppliedOrbit"
+            activeMode === "segmentIndentedAppliedOrbit" ||
+            activeMode === "segmentBakedNormalMapView" ||
+            activeMode === "segmentBakedNormalMapApplied"
           ) {
             const segmentMaskTarget = new THREE.WebGLRenderTarget(1, 1);
             segmentMaskTarget.texture.minFilter = THREE.NearestFilter;
@@ -3519,7 +4169,10 @@ export default function PixelArtBufferViews({
             segmentMaskTarget.texture.generateMipmaps = false;
             standaloneSegmentMaskTarget = segmentMaskTarget;
 
-            const segmentParticipationTarget = new THREE.WebGLRenderTarget(1, 1);
+            const segmentParticipationTarget = new THREE.WebGLRenderTarget(
+              1,
+              1,
+            );
             segmentParticipationTarget.texture.minFilter = THREE.NearestFilter;
             segmentParticipationTarget.texture.magFilter = THREE.NearestFilter;
             segmentParticipationTarget.texture.generateMipmaps = false;
@@ -3531,7 +4184,9 @@ export default function PixelArtBufferViews({
               activeMode === "segmentIndentedNormal" ||
               activeMode === "segmentIndentedLit" ||
               activeMode === "segmentIndentedApplied" ||
-              activeMode === "segmentIndentedAppliedOrbit"
+              activeMode === "segmentIndentedAppliedOrbit" ||
+              activeMode === "segmentBakedNormalMapView" ||
+              activeMode === "segmentBakedNormalMapApplied"
             ) {
               const segmentFieldTarget = new THREE.WebGLRenderTarget(1, 1);
               segmentFieldTarget.texture.minFilter = THREE.NearestFilter;
@@ -3539,6 +4194,15 @@ export default function PixelArtBufferViews({
               segmentFieldTarget.texture.generateMipmaps = false;
               standaloneSegmentFieldTarget = segmentFieldTarget;
             }
+
+            const segmentBakedNormalMapTarget = new THREE.WebGLRenderTarget(
+              1,
+              1,
+            );
+            segmentBakedNormalMapTarget.texture.minFilter = THREE.NearestFilter;
+            segmentBakedNormalMapTarget.texture.magFilter = THREE.NearestFilter;
+            segmentBakedNormalMapTarget.texture.generateMipmaps = false;
+            standaloneSegmentBakedNormalMapTarget = segmentBakedNormalMapTarget;
 
             const colorTarget = new THREE.WebGLRenderTarget(1, 1);
             colorTarget.texture.minFilter = THREE.NearestFilter;
@@ -3706,7 +4370,10 @@ export default function PixelArtBufferViews({
         const height = Math.max(mount.clientHeight, 1);
         const devicePixelRatio = window.devicePixelRatio || 1;
         const displayWidth = Math.max(1, Math.round(width * devicePixelRatio));
-        const displayHeight = Math.max(1, Math.round(height * devicePixelRatio));
+        const displayHeight = Math.max(
+          1,
+          Math.round(height * devicePixelRatio),
+        );
         const renderWidth = Math.max(1, Math.round(width / PIXEL_SCALE));
         const renderHeight = Math.max(1, Math.round(height / PIXEL_SCALE));
 
@@ -3725,6 +4392,8 @@ export default function PixelArtBufferViews({
           mount === mounts.segmentIndentedLit ||
           mount === mounts.segmentIndentedApplied ||
           mount === mounts.segmentIndentedAppliedOrbit ||
+          mount === mounts.segmentBakedNormalMapView ||
+          mount === mounts.segmentBakedNormalMapApplied ||
           mount === mounts.combinedMask ||
           mount === mounts.augmentedBlend ||
           mount === mounts.blend
@@ -3735,20 +4404,24 @@ export default function PixelArtBufferViews({
               : mount === mounts.objectIdEdges
                 ? "objectIdEdges"
                 : mount === mounts.segmentEdges
-                ? "segmentEdges"
+                  ? "segmentEdges"
                   : mount === mounts.segmentIndented
                     ? "segmentIndented"
                     : mount === mounts.segmentIndentedOrbit
                       ? "segmentIndentedOrbit"
-                    : mount === mounts.segmentIndentedNormal
-                      ? "segmentIndentedNormal"
-                    : mount === mounts.segmentIndentedLit
-                      ? "segmentIndentedLit"
-                      : mount === mounts.segmentIndentedApplied
-                        ? "segmentIndentedApplied"
-                      : mount === mounts.segmentIndentedAppliedOrbit
-                        ? "segmentIndentedAppliedOrbit"
-                      : "normalEdges",
+                      : mount === mounts.segmentIndentedNormal
+                        ? "segmentIndentedNormal"
+                        : mount === mounts.segmentIndentedLit
+                          ? "segmentIndentedLit"
+                          : mount === mounts.segmentIndentedApplied
+                            ? "segmentIndentedApplied"
+                            : mount === mounts.segmentIndentedAppliedOrbit
+                              ? "segmentIndentedAppliedOrbit"
+                              : mount === mounts.segmentBakedNormalMapView
+                                ? "segmentBakedNormalMapView"
+                                : mount === mounts.segmentBakedNormalMapApplied
+                                  ? "segmentBakedNormalMapApplied"
+                                  : "normalEdges",
           );
           if (depthTarget) {
             depthTarget.setSize(renderWidth, renderHeight);
@@ -3760,7 +4433,9 @@ export default function PixelArtBufferViews({
             mount === mounts.segmentIndentedNormal ||
             mount === mounts.segmentIndentedLit ||
             mount === mounts.segmentIndentedApplied ||
-            mount === mounts.segmentIndentedAppliedOrbit
+            mount === mounts.segmentIndentedAppliedOrbit ||
+            mount === mounts.segmentBakedNormalMapView ||
+            mount === mounts.segmentBakedNormalMapApplied
           ) {
             depthEdgeTargets
               .get("objectIds")
@@ -3775,7 +4450,9 @@ export default function PixelArtBufferViews({
               mount === mounts.segmentIndentedNormal ||
               mount === mounts.segmentIndentedLit ||
               mount === mounts.segmentIndentedApplied ||
-              mount === mounts.segmentIndentedAppliedOrbit
+              mount === mounts.segmentIndentedAppliedOrbit ||
+              mount === mounts.segmentBakedNormalMapView ||
+              mount === mounts.segmentBakedNormalMapApplied
             ) {
               standaloneSegmentMaskTarget?.setSize(renderWidth, renderHeight);
               standaloneSegmentParticipationTarget?.setSize(
@@ -3783,6 +4460,10 @@ export default function PixelArtBufferViews({
                 renderHeight,
               );
               standaloneSegmentFieldTarget?.setSize(renderWidth, renderHeight);
+              standaloneSegmentBakedNormalMapTarget?.setSize(
+                renderWidth,
+                renderHeight,
+              );
               standaloneColorTarget?.setSize(renderWidth, renderHeight);
             }
           }
@@ -3869,11 +4550,9 @@ export default function PixelArtBufferViews({
       renderer: THREE.WebGLRenderer,
       camera: THREE.OrthographicCamera,
     ) => {
-      segmentParticipationEntries.forEach(
-        ({ mesh, participationMaterial }) => {
-          mesh.material = participationMaterial;
-        },
-      );
+      segmentParticipationEntries.forEach(({ mesh, participationMaterial }) => {
+        mesh.material = participationMaterial;
+      });
       scene.overrideMaterial = null;
       renderer.render(scene, camera);
       segmentParticipationEntries.forEach(({ mesh, material }) => {
@@ -3905,6 +4584,21 @@ export default function PixelArtBufferViews({
       scene.overrideMaterial = null;
       renderer.render(scene, camera);
       segmentBevelEntries.forEach(({ mesh, material }) => {
+        mesh.material = material;
+      });
+    };
+    const renderSegmentBakedNormalMap = (
+      renderer: THREE.WebGLRenderer,
+      camera: THREE.OrthographicCamera,
+    ) => {
+      segmentBakedNormalMapEntries.forEach(
+        ({ mesh, bakedNormalMapMaterial }) => {
+          mesh.material = bakedNormalMapMaterial;
+        },
+      );
+      scene.overrideMaterial = null;
+      renderer.render(scene, camera);
+      segmentBakedNormalMapEntries.forEach(({ mesh, material }) => {
         mesh.material = material;
       });
     };
@@ -3949,6 +4643,14 @@ export default function PixelArtBufferViews({
       } else if (mode === "segmentCenterField") {
         renderer.setRenderTarget(outputTarget);
         renderSegmentCenterField(renderer, camera);
+        renderer.setRenderTarget(null);
+        presentUpscaled(renderer, outputTarget, false);
+      } else if (mode === "segmentBakedNormalMapTexture") {
+        postQuad.material = segmentBakedNormalMapTexturePreviewMaterial;
+        segmentBakedNormalMapTexturePreviewMaterial.uniforms.tField.value =
+          generatedSegmentFieldTexture(selectedSegmentTexture.path);
+        renderer.setRenderTarget(outputTarget);
+        renderer.render(postScene, postCamera);
         renderer.setRenderTarget(null);
         presentUpscaled(renderer, outputTarget, false);
       } else if (mode === "segmentCellBevel") {
@@ -4109,14 +4811,23 @@ export default function PixelArtBufferViews({
           mode === "segmentIndentedNormal" ||
           mode === "segmentIndentedLit" ||
           mode === "segmentIndentedApplied" ||
-          mode === "segmentIndentedAppliedOrbit"
+          mode === "segmentIndentedAppliedOrbit" ||
+          mode === "segmentBakedNormalMapView" ||
+          mode === "segmentBakedNormalMapApplied"
         ) {
-          if (mode === "segmentIndentedNormal" && !loggedSegmentIndentedNormalRender) {
+          if (
+            mode === "segmentIndentedNormal" &&
+            !loggedSegmentIndentedNormalRender
+          ) {
             console.log("segmentIndentedNormal render", {
               hasTarget: Boolean(target),
               hasStandaloneColorTarget: Boolean(standaloneColorTarget),
-              hasStandaloneSegmentMaskTarget: Boolean(standaloneSegmentMaskTarget),
-              hasStandaloneSegmentFieldTarget: Boolean(standaloneSegmentFieldTarget),
+              hasStandaloneSegmentMaskTarget: Boolean(
+                standaloneSegmentMaskTarget,
+              ),
+              hasStandaloneSegmentFieldTarget: Boolean(
+                standaloneSegmentFieldTarget,
+              ),
               hasObjectIdsTarget: Boolean(depthEdgeTargets.get("objectIds")),
               hasNormalsTarget: Boolean(depthEdgeTargets.get("normals")),
             });
@@ -4128,7 +4839,9 @@ export default function PixelArtBufferViews({
             mode === "segmentIndentedNormal" ||
             mode === "segmentIndentedLit" ||
             mode === "segmentIndentedApplied" ||
-            mode === "segmentIndentedAppliedOrbit"
+            mode === "segmentIndentedAppliedOrbit" ||
+            mode === "segmentBakedNormalMapView" ||
+            mode === "segmentBakedNormalMapApplied"
           ) {
             if (!standaloneColorTarget) return;
             scene.overrideMaterial = null;
@@ -4143,15 +4856,33 @@ export default function PixelArtBufferViews({
 
           const segmentObjectIdTarget = depthEdgeTargets.get("objectIds");
           const segmentNormalTarget = depthEdgeTargets.get("normals");
-          if (!segmentObjectIdTarget || !segmentNormalTarget) {
+          const segmentTangentTarget = depthEdgeTargets.get("tangents");
+          if (
+            !segmentObjectIdTarget ||
+            !segmentNormalTarget ||
+            !segmentTangentTarget
+          ) {
             return;
           }
           renderer.setRenderTarget(segmentObjectIdTarget);
           renderObjectIds(renderer, camera);
           renderer.setRenderTarget(null);
 
-          scene.overrideMaterial = worldNormalMaterial;
+          scene.overrideMaterial =
+            mode === "segmentBakedNormalMapView" ||
+            mode === "segmentBakedNormalMapApplied"
+              ? normalMaterial
+              : worldNormalMaterial;
           renderer.setRenderTarget(segmentNormalTarget);
+          renderer.render(scene, camera);
+          renderer.setRenderTarget(null);
+
+          scene.overrideMaterial =
+            mode === "segmentBakedNormalMapView" ||
+            mode === "segmentBakedNormalMapApplied"
+              ? viewTangentMaterial
+              : worldTangentMaterial;
+          renderer.setRenderTarget(segmentTangentTarget);
           renderer.render(scene, camera);
           renderer.setRenderTarget(null);
 
@@ -4175,7 +4906,9 @@ export default function PixelArtBufferViews({
             mode === "segmentIndentedNormal" ||
             mode === "segmentIndentedLit" ||
             mode === "segmentIndentedApplied" ||
-            mode === "segmentIndentedAppliedOrbit"
+            mode === "segmentIndentedAppliedOrbit" ||
+            mode === "segmentBakedNormalMapView" ||
+            mode === "segmentBakedNormalMapApplied"
           ) {
             if (!standaloneSegmentMaskTarget) return;
 
@@ -4189,26 +4922,17 @@ export default function PixelArtBufferViews({
             renderer.setRenderTarget(null);
 
             if (!standaloneSegmentFieldTarget) return;
-            postQuad.material = segmentScreenFieldMaterial;
-            segmentScreenFieldMaterial.uniforms.tSegments.value = target.texture;
-            segmentScreenFieldMaterial.uniforms.tObjectIds.value =
-              segmentObjectIdTarget.texture;
-            segmentScreenFieldMaterial.uniforms.texelSize.value.set(
-              1 / target.width,
-              1 / target.height,
-            );
             renderer.setRenderTarget(standaloneSegmentFieldTarget);
-            renderer.render(postScene, postCamera);
+            renderSegmentField(renderer, camera);
+            renderer.setRenderTarget(null);
+
+            if (!standaloneSegmentBakedNormalMapTarget) return;
+            renderer.setRenderTarget(standaloneSegmentBakedNormalMapTarget);
+            renderSegmentBakedNormalMap(renderer, camera);
             renderer.setRenderTarget(null);
 
             const worldLightDirection = new THREE.Vector3()
               .subVectors(keyLight.position, lookTarget)
-              .normalize();
-            const cameraRight = new THREE.Vector3()
-              .setFromMatrixColumn(camera.matrixWorld, 0)
-              .normalize();
-            const cameraUp = new THREE.Vector3()
-              .setFromMatrixColumn(camera.matrixWorld, 1)
               .normalize();
 
             const indentedMaterial =
@@ -4217,9 +4941,13 @@ export default function PixelArtBufferViews({
                 : mode === "segmentIndentedApplied" ||
                     mode === "segmentIndentedAppliedOrbit"
                   ? segmentIndentedAppliedMaterial
-                : mode === "segmentIndentedNormal"
-                  ? segmentIndentedNormalMaterial
-                : segmentIndentedMaterial;
+                  : mode === "segmentBakedNormalMapView"
+                    ? segmentBakedNormalMapViewMaterial
+                    : mode === "segmentBakedNormalMapApplied"
+                      ? segmentBakedNormalMapAppliedMaterial
+                      : mode === "segmentIndentedNormal"
+                        ? segmentIndentedNormalMaterial
+                        : segmentIndentedMaterial;
             postQuad.material = indentedMaterial;
             indentedMaterial.uniforms.tColor.value =
               mode === "segmentIndentedNormal"
@@ -4232,6 +4960,10 @@ export default function PixelArtBufferViews({
             if ("tParticipation" in indentedMaterial.uniforms) {
               indentedMaterial.uniforms.tParticipation.value =
                 standaloneSegmentParticipationTarget.texture;
+            }
+            if ("tBakedNormalMap" in indentedMaterial.uniforms) {
+              indentedMaterial.uniforms.tBakedNormalMap.value =
+                standaloneSegmentBakedNormalMapTarget.texture;
             }
             if ("tSegmentField" in indentedMaterial.uniforms) {
               indentedMaterial.uniforms.tSegmentField.value =
@@ -4257,15 +4989,21 @@ export default function PixelArtBufferViews({
               indentedMaterial.uniforms.darkenStrength.value =
                 insetControlsRef.current.darkenStrength;
             }
+            if ("blend" in indentedMaterial.uniforms) {
+              indentedMaterial.uniforms.blend.value =
+                bakedNormalMapBlendRef.current;
+            }
+            if ("insetStrength" in indentedMaterial.uniforms) {
+              indentedMaterial.uniforms.insetStrength.value =
+                bakedNormalMapInsetStrengthRef.current;
+            }
             if ("tNormals" in indentedMaterial.uniforms) {
               indentedMaterial.uniforms.tNormals.value =
                 segmentNormalTarget.texture;
             }
-            if ("cameraRight" in indentedMaterial.uniforms) {
-              indentedMaterial.uniforms.cameraRight.value.copy(cameraRight);
-            }
-            if ("cameraUp" in indentedMaterial.uniforms) {
-              indentedMaterial.uniforms.cameraUp.value.copy(cameraUp);
+            if ("tTangents" in indentedMaterial.uniforms) {
+              indentedMaterial.uniforms.tTangents.value =
+                segmentTangentTarget.texture;
             }
             indentedMaterial.uniforms.texelSize.value.set(
               1 / target.width,
@@ -4326,7 +5064,8 @@ export default function PixelArtBufferViews({
         activeModes.includes("segmentIndentedOrbit") ||
         activeModes.includes("segmentIndentedNormal") ||
         activeModes.includes("segmentIndentedLit") ||
-        activeModes.includes("segmentIndentedApplied")
+        activeModes.includes("segmentIndentedApplied") ||
+        activeModes.includes("segmentBakedNormalMapApplied")
       ) {
         const azimuth = keyLightBaseAngle + elapsed * 0.35;
         keyLight.position.set(
@@ -4343,7 +5082,9 @@ export default function PixelArtBufferViews({
           target.y + Math.sin(cameraPitch) * cameraDistance,
           Math.cos(orbitYaw) * Math.cos(cameraPitch) * cameraDistance,
         );
-        cameras.get("segmentIndentedAppliedOrbit")?.position.copy(orbitPosition);
+        cameras
+          .get("segmentIndentedAppliedOrbit")
+          ?.position.copy(orbitPosition);
         cameras.get("segmentIndentedAppliedOrbit")?.lookAt(target);
       }
 
@@ -4408,6 +5149,7 @@ export default function PixelArtBufferViews({
       normalMaterial.dispose();
       worldNormalMaterial.dispose();
       worldTangentMaterial.dispose();
+      viewTangentMaterial.dispose();
       depthMaterial.dispose();
       depthEdgeMaterial.dispose();
       normalEdgeMaterial.dispose();
@@ -4420,6 +5162,8 @@ export default function PixelArtBufferViews({
       upscaleQuad.geometry.dispose();
       segmentIndentedLitMaterial.dispose();
       segmentIndentedAppliedMaterial.dispose();
+      segmentBakedNormalMapTexturePreviewMaterial.dispose();
+      segmentBakedNormalMapViewMaterial.dispose();
       combinedMaskMaterial.dispose();
       augmentedBlendMaterial.dispose();
       blendMaterial.dispose();
@@ -4433,6 +5177,7 @@ export default function PixelArtBufferViews({
       standaloneSegmentMaskTarget?.dispose();
       standaloneSegmentParticipationTarget?.dispose();
       standaloneSegmentFieldTarget?.dispose();
+      standaloneSegmentBakedNormalMapTarget?.dispose();
       voxelMaterial.dispose();
       stoneMaterial.dispose();
       pedestalSideMaterial.dispose();
@@ -4459,7 +5204,7 @@ export default function PixelArtBufferViews({
         }
       });
     };
-  }, [mode, segmentTextureDependency, isRendererActive]);
+  }, [mode, segmentTextureDependency, segmentFieldDependency, isRendererActive]);
 
   const showDepthControl =
     mode === "depthEdgesOnly" ||
@@ -4476,9 +5221,19 @@ export default function PixelArtBufferViews({
     mode === "segmentIndentedLitOnly" ||
     mode === "segmentIndentedAppliedOnly" ||
     mode === "segmentIndentedAppliedOrbitOnly" ||
+    mode === "segmentBakedNormalMapTextureOnly" ||
+    mode === "segmentBakedNormalMapViewOnly" ||
+    mode === "segmentBakedNormalMapAppliedOnly" ||
     mode === "combinedMaskOnly";
   const showSegmentFieldUnderlayControl =
     mode === "segmentIndentedOnly" || mode === "segmentIndentedOrbitOnly";
+  const showSegmentFieldModeControl =
+    mode === "segmentIndentedOnly" ||
+    mode === "segmentIndentedOrbitOnly" ||
+    mode === "segmentIndentedNormalOnly" ||
+    mode === "segmentIndentedLitOnly" ||
+    mode === "segmentIndentedAppliedOnly" ||
+    mode === "segmentIndentedAppliedOrbitOnly";
   const showInsetNormalControls =
     mode === "segmentIndentedNormalOnly" ||
     mode === "segmentIndentedLitOnly" ||
@@ -4488,6 +5243,11 @@ export default function PixelArtBufferViews({
     mode === "segmentIndentedLitOnly" ||
     mode === "segmentIndentedAppliedOnly" ||
     mode === "segmentIndentedAppliedOrbitOnly";
+  const showBakedNormalMapBlendControl =
+    mode === "segmentBakedNormalMapViewOnly" ||
+    mode === "segmentBakedNormalMapAppliedOnly";
+  const showBakedNormalMapInsetControl =
+    mode === "segmentBakedNormalMapViewOnly";
 
   const updateSegmentTexture = (nextId: string) => {
     setSelectedSegmentTextureId(nextId);
@@ -4507,6 +5267,7 @@ export default function PixelArtBufferViews({
       baseNormalWeight: number;
       litThreshold: number;
       darkenStrength: number;
+      smoothField: boolean;
     }>,
   ) => {
     if (typeof next.fieldUnderlay === "number") {
@@ -4523,6 +5284,9 @@ export default function PixelArtBufferViews({
     }
     if (typeof next.darkenStrength === "number") {
       setInsetDarkenStrength(next.darkenStrength);
+    }
+    if (typeof next.smoothField === "boolean") {
+      setInsetSmoothField(next.smoothField);
     }
     if (typeof window === "undefined") return;
     const merged = {
@@ -4651,6 +5415,27 @@ export default function PixelArtBufferViews({
       {mode === "segmentIndentedAppliedOrbitOnly" && (
         <div
           ref={segmentIndentedAppliedOrbitRef}
+          className="pixel-buffer-demo__viewport pixel-buffer-demo__viewport--solo"
+        />
+      )}
+
+      {mode === "segmentBakedNormalMapTextureOnly" && (
+        <div
+          ref={segmentBakedNormalMapTextureRef}
+          className="pixel-buffer-demo__viewport pixel-buffer-demo__viewport--solo"
+        />
+      )}
+
+      {mode === "segmentBakedNormalMapViewOnly" && (
+        <div
+          ref={segmentBakedNormalMapViewRef}
+          className="pixel-buffer-demo__viewport pixel-buffer-demo__viewport--solo"
+        />
+      )}
+
+      {mode === "segmentBakedNormalMapAppliedOnly" && (
+        <div
+          ref={segmentBakedNormalMapAppliedRef}
           className="pixel-buffer-demo__viewport pixel-buffer-demo__viewport--solo"
         />
       )}
@@ -4927,6 +5712,47 @@ export default function PixelArtBufferViews({
         </div>
       )}
 
+      {showSegmentFieldModeControl && (
+        <div className="pixel-buffer-demo__controls">
+          <div className="pixel-buffer-demo__control-row">
+            <label
+              className="pixel-buffer-demo__control"
+              aria-label="Field mode"
+            >
+              <span>Field Mode</span>
+              <select
+                value={insetSmoothField ? "smooth" : "quantized"}
+                onChange={(event) =>
+                  updateInsetControls({
+                    smoothField: event.currentTarget.value === "smooth",
+                  })
+                }
+              >
+                <option value="quantized">Quantized</option>
+                <option value="smooth">Smooth</option>
+              </select>
+            </label>
+            <button
+              className="pixel-buffer-demo__reset"
+              type="button"
+              aria-label="Reset field mode"
+              onClick={() =>
+                updateInsetControls({
+                  smoothField: INSET_SMOOTH_FIELD,
+                })
+              }
+            >
+              <svg viewBox="0 0 32 32" aria-hidden="true">
+                <path
+                  d="M18,28A12,12,0,1,0,6,16v6.2L2.4,18.6,1,20l6,6,6-6-1.4-1.4L8,22.2V16H8A10,10,0,1,1,18,26Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       {showSegmentFieldUnderlayControl && (
         <div className="pixel-buffer-demo__controls">
           <div className="pixel-buffer-demo__control-row">
@@ -4952,9 +5778,7 @@ export default function PixelArtBufferViews({
               className="pixel-buffer-demo__reset"
               type="button"
               aria-label="Reset field underlay"
-              onClick={() =>
-                updateInsetControls({ fieldUnderlay: 0.35 })
-              }
+              onClick={() => updateInsetControls({ fieldUnderlay: 0.35 })}
             >
               <svg viewBox="0 0 32 32" aria-hidden="true">
                 <path
@@ -5114,6 +5938,81 @@ export default function PixelArtBufferViews({
                   updateInsetControls({
                     darkenStrength: INSET_DARKEN_STRENGTH,
                   })
+                }
+              >
+                <svg viewBox="0 0 32 32" aria-hidden="true">
+                  <path
+                    d="M18,28A12,12,0,1,0,6,16v6.2L2.4,18.6,1,20l6,6,6-6-1.4-1.4L8,22.2V16H8A10,10,0,1,1,18,26Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {showBakedNormalMapBlendControl && (
+        <div className="pixel-buffer-demo__controls">
+          <div className="pixel-buffer-demo__control-row">
+            <label
+              className="pixel-buffer-demo__control"
+              aria-label="Baked normal map blend"
+            >
+              <span>Normal Map Blend</span>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={bakedNormalMapBlend}
+                onChange={(event) =>
+                  setBakedNormalMapBlend(Number(event.currentTarget.value))
+                }
+              />
+            </label>
+            <button
+              className="pixel-buffer-demo__reset"
+              type="button"
+              aria-label="Reset baked normal map blend"
+              onClick={() => setBakedNormalMapBlend(BAKED_NORMAL_MAP_BLEND)}
+            >
+              <svg viewBox="0 0 32 32" aria-hidden="true">
+                <path
+                  d="M18,28A12,12,0,1,0,6,16v6.2L2.4,18.6,1,20l6,6,6-6-1.4-1.4L8,22.2V16H8A10,10,0,1,1,18,26Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </button>
+          </div>
+          {showBakedNormalMapInsetControl && (
+            <div className="pixel-buffer-demo__control-row">
+              <label
+                className="pixel-buffer-demo__control"
+                aria-label="Baked normal map inset strength"
+              >
+                <span>Inset Strength</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={bakedNormalMapInsetStrength}
+                  onChange={(event) =>
+                    setBakedNormalMapInsetStrength(
+                      Number(event.currentTarget.value),
+                    )
+                  }
+                />
+              </label>
+              <button
+                className="pixel-buffer-demo__reset"
+                type="button"
+                aria-label="Reset baked normal map inset strength"
+                onClick={() =>
+                  setBakedNormalMapInsetStrength(
+                    BAKED_NORMAL_MAP_INSET_STRENGTH,
+                  )
                 }
               >
                 <svg viewBox="0 0 32 32" aria-hidden="true">
