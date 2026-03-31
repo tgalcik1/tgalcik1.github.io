@@ -118,7 +118,7 @@ const AUGMENTED_BLEND_VIEW_MODES: ViewMode[] = ["augmentedBlend"];
 const BLEND_VIEW_MODES: ViewMode[] = ["blend"];
 const SEGMENT_TEXTURE_STORAGE_KEY = "pixel-art-segment-texture";
 const SEGMENT_TEXTURE_EVENT = "pixel-art-segment-texture-change";
-const INSET_CONTROLS_STORAGE_KEY = "pixel-art-inset-controls";
+const INSET_CONTROLS_STORAGE_KEY = "pixel-art-inset-controls-v2";
 const INSET_CONTROLS_EVENT = "pixel-art-inset-controls-change";
 const generatedSegmentFieldCache = new Map<string, THREE.DataTexture>();
 const generatedSegmentCenterFieldCache = new Map<string, THREE.DataTexture>();
@@ -141,10 +141,12 @@ const NORMAL_OUTLINE_STRENGTH = 1;
 const OUTLINE_LIGHT_THRESHOLD = 0.05;
 const OUTLINE_LIGHT_SOFTNESS = 0.04;
 const INSET_DIRECTION_STRENGTH = 1;
-const INSET_BASE_NORMAL_WEIGHT = 0.85;
-const INSET_LIT_THRESHOLD = 0.45;
-const INSET_DARKEN_STRENGTH = 0.4;
-const INSET_SMOOTH_FIELD = false;
+const INSET_BASE_NORMAL_WEIGHT = 0;
+const INSET_LIT_THRESHOLD = 0.5;
+const INSET_LIT_FALLOFF = 0.5;
+const INSET_DARKEN_STRENGTH = 0.5;
+const INSET_FIELD_MODE = "blend";
+const INSET_FIELD_BLEND = 0.5;
 const BAKED_NORMAL_MAP_STRENGTH = 0.75;
 const BAKED_NORMAL_MAP_BLEND = 0.85;
 const BAKED_NORMAL_MAP_INSET_STRENGTH = 1;
@@ -177,10 +179,14 @@ export default function PixelArtBufferViews({
   );
   const [insetLitThreshold, setInsetLitThreshold] =
     useState(INSET_LIT_THRESHOLD);
+  const [insetLitFalloff, setInsetLitFalloff] = useState(INSET_LIT_FALLOFF);
   const [insetDarkenStrength, setInsetDarkenStrength] = useState(
     INSET_DARKEN_STRENGTH,
   );
-  const [insetSmoothField, setInsetSmoothField] = useState(INSET_SMOOTH_FIELD);
+  const [insetFieldMode, setInsetFieldMode] = useState<
+    "quantized" | "smooth" | "blend"
+  >(INSET_FIELD_MODE);
+  const [insetFieldBlend, setInsetFieldBlend] = useState(INSET_FIELD_BLEND);
   const [bakedNormalMapBlend, setBakedNormalMapBlend] = useState(
     BAKED_NORMAL_MAP_BLEND,
   );
@@ -192,16 +198,20 @@ export default function PixelArtBufferViews({
     directionStrength: insetDirectionStrength,
     baseNormalWeight: insetBaseNormalWeight,
     litThreshold: insetLitThreshold,
+    litFalloff: insetLitFalloff,
     darkenStrength: insetDarkenStrength,
-    smoothField: insetSmoothField,
+    fieldMode: insetFieldMode,
+    fieldBlend: insetFieldBlend,
   });
   insetControlsRef.current = {
     fieldUnderlay: segmentFieldUnderlay,
     directionStrength: insetDirectionStrength,
     baseNormalWeight: insetBaseNormalWeight,
     litThreshold: insetLitThreshold,
+    litFalloff: insetLitFalloff,
     darkenStrength: insetDarkenStrength,
-    smoothField: insetSmoothField,
+    fieldMode: insetFieldMode,
+    fieldBlend: insetFieldBlend,
   };
   const bakedNormalMapBlendRef = useRef(bakedNormalMapBlend);
   bakedNormalMapBlendRef.current = bakedNormalMapBlend;
@@ -267,7 +277,7 @@ export default function PixelArtBufferViews({
     mode === "segmentBakedNormalMapViewOnly" ||
     mode === "segmentBakedNormalMapAppliedOnly";
   const segmentFieldDependency = usesSegmentField
-    ? (insetSmoothField ? "smooth" : "quantized")
+    ? insetFieldMode
     : "no-segment-field";
 
   useEffect(() => {
@@ -323,17 +333,24 @@ export default function PixelArtBufferViews({
       if (typeof next.directionStrength === "number") {
         setInsetDirectionStrength(next.directionStrength);
       }
-      if (typeof next.baseNormalWeight === "number") {
-        setInsetBaseNormalWeight(next.baseNormalWeight);
-      }
       if (typeof next.litThreshold === "number") {
         setInsetLitThreshold(next.litThreshold);
+      }
+      if (typeof next.litFalloff === "number") {
+        setInsetLitFalloff(next.litFalloff);
       }
       if (typeof next.darkenStrength === "number") {
         setInsetDarkenStrength(next.darkenStrength);
       }
-      if (typeof next.smoothField === "boolean") {
-        setInsetSmoothField(next.smoothField);
+      if (
+        next.fieldMode === "quantized" ||
+        next.fieldMode === "smooth" ||
+        next.fieldMode === "blend"
+      ) {
+        setInsetFieldMode(next.fieldMode);
+      }
+      if (typeof next.fieldBlend === "number") {
+        setInsetFieldBlend(next.fieldBlend);
       }
     };
 
@@ -2777,6 +2794,7 @@ export default function PixelArtBufferViews({
         directionStrength: { value: insetDirectionStrength },
         baseNormalWeight: { value: insetBaseNormalWeight },
         litThreshold: { value: insetLitThreshold },
+        litFalloff: { value: insetLitFalloff },
       },
       vertexShader: `
         varying vec2 vUv;
@@ -2797,6 +2815,7 @@ export default function PixelArtBufferViews({
         uniform float directionStrength;
         uniform float baseNormalWeight;
         uniform float litThreshold;
+        uniform float litFalloff;
 
         varying vec2 vUv;
 
@@ -2856,7 +2875,11 @@ export default function PixelArtBufferViews({
           );
 
           float bevelLight = clamp(dot(bevelNormal, lightDir), 0.0, 1.0);
-          float bevelLit = step(litThreshold, bevelLight);
+          float bevelLit = smoothstep(
+            max(0.0, litThreshold - litFalloff),
+            litThreshold,
+            bevelLight
+          );
           float magenta = bevelMask * bevelLit;
           float bevelShadow = bevelMask * (1.0 - bevelLit);
 
@@ -2881,6 +2904,7 @@ export default function PixelArtBufferViews({
         directionStrength: { value: insetDirectionStrength },
         baseNormalWeight: { value: insetBaseNormalWeight },
         litThreshold: { value: insetLitThreshold },
+        litFalloff: { value: insetLitFalloff },
         darkenStrength: { value: insetDarkenStrength },
       },
       vertexShader: `
@@ -2902,6 +2926,7 @@ export default function PixelArtBufferViews({
         uniform float directionStrength;
         uniform float baseNormalWeight;
         uniform float litThreshold;
+        uniform float litFalloff;
         uniform float darkenStrength;
 
         varying vec2 vUv;
@@ -2961,7 +2986,11 @@ export default function PixelArtBufferViews({
           );
 
           float bevelLight = clamp(dot(bevelNormal, lightDir), 0.0, 1.0);
-          float magenta = inset * step(litThreshold, bevelLight);
+          float magenta = inset * smoothstep(
+            max(0.0, litThreshold - litFalloff),
+            litThreshold,
+            bevelLight
+          );
           vec3 litColor = min(color * (1.0 + 0.55 * magenta), vec3(1.0));
           vec3 result = mix(litColor, litColor * darkenStrength, blue);
           gl_FragColor = vec4(linearToSRGB(clamp(result, 0.0, 1.0)), 1.0);
@@ -3301,6 +3330,7 @@ export default function PixelArtBufferViews({
       material: THREE.Material | THREE.Material[];
       bakedNormalMapMaterial: THREE.Material | THREE.Material[];
     }> = [];
+    const segmentFieldMaterials: THREE.ShaderMaterial[] = [];
     const segmentCellBevelMaterials: THREE.ShaderMaterial[] = [];
     const disposableModelMaterials: THREE.Material[] = [];
     const disposableModelGeometries = new Set<THREE.BufferGeometry>();
@@ -3480,17 +3510,77 @@ export default function PixelArtBufferViews({
       repeatX: number,
       repeatY: number,
     ) => {
-      const repeatedFieldTexture = getRepeatedSegmentFieldTexture(
+      const quantizedFieldTexture = getRepeatedSegmentFieldTexture(
         fieldTexturePath,
         repeatX,
         repeatY,
-        insetControlsRef.current.smoothField,
+        false,
+      );
+      const smoothFieldTexture = getRepeatedSegmentFieldTexture(
+        fieldTexturePath,
+        repeatX,
+        repeatY,
+        true,
       );
 
-      return new THREE.MeshBasicMaterial({
-        map: repeatedFieldTexture,
-        color: "#ffffff",
+      const material = new THREE.ShaderMaterial({
+        uniforms: {
+          tQuantizedField: { value: quantizedFieldTexture },
+          tSmoothField: { value: smoothFieldTexture },
+          segmentRepeat: { value: new THREE.Vector2(repeatX, repeatY) },
+          fieldBlend: {
+            value:
+              insetControlsRef.current.fieldMode === "smooth"
+                ? 1
+                : insetControlsRef.current.fieldMode === "blend"
+                  ? insetControlsRef.current.fieldBlend
+                  : 0,
+          },
+        },
+        vertexShader: `
+          varying vec2 vUv;
+
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform sampler2D tQuantizedField;
+          uniform sampler2D tSmoothField;
+          uniform vec2 segmentRepeat;
+          uniform float fieldBlend;
+
+          varying vec2 vUv;
+
+          void main() {
+            vec2 tiledUv = fract(vUv * segmentRepeat);
+            vec4 quantizedField = texture2D(tQuantizedField, tiledUv);
+            vec4 smoothField = texture2D(tSmoothField, tiledUv);
+            vec2 blendedDirection = mix(
+              quantizedField.xy * 2.0 - 1.0,
+              smoothField.xy * 2.0 - 1.0,
+              clamp(fieldBlend, 0.0, 1.0)
+            );
+            float directionLength = length(blendedDirection);
+            blendedDirection = directionLength > 0.0001
+              ? blendedDirection / directionLength
+              : vec2(0.0);
+            float blendedDistance = mix(
+              quantizedField.z,
+              smoothField.z,
+              clamp(fieldBlend, 0.0, 1.0)
+            );
+            gl_FragColor = vec4(
+              blendedDirection * 0.5 + 0.5,
+              blendedDistance,
+              1.0
+            );
+          }
+        `,
       });
+      segmentFieldMaterials.push(material);
+      return material;
     };
     const createSegmentBakedNormalMapMaterial = (
       fieldTexturePath: string,
@@ -4985,6 +5075,10 @@ export default function PixelArtBufferViews({
               indentedMaterial.uniforms.litThreshold.value =
                 insetControlsRef.current.litThreshold;
             }
+            if ("litFalloff" in indentedMaterial.uniforms) {
+              indentedMaterial.uniforms.litFalloff.value =
+                insetControlsRef.current.litFalloff;
+            }
             if ("darkenStrength" in indentedMaterial.uniforms) {
               indentedMaterial.uniforms.darkenStrength.value =
                 insetControlsRef.current.darkenStrength;
@@ -5102,6 +5196,15 @@ export default function PixelArtBufferViews({
       const segmentCellLightDirection = new THREE.Vector3()
         .subVectors(keyLight.position, lookTarget)
         .normalize();
+      const fieldBlend =
+        insetControlsRef.current.fieldMode === "smooth"
+          ? 1
+          : insetControlsRef.current.fieldMode === "blend"
+            ? insetControlsRef.current.fieldBlend
+            : 0;
+      segmentFieldMaterials.forEach((material) => {
+        material.uniforms.fieldBlend.value = fieldBlend;
+      });
       segmentCellBevelMaterials.forEach((material) => {
         const shader = material.userData.shader as
           | { uniforms?: Record<string, { value: THREE.Vector3 }> }
@@ -5186,6 +5289,7 @@ export default function PixelArtBufferViews({
       segmentFloorMaterial.dispose();
       segmentPillarMaterial.dispose();
       segmentEnabledMaterial.dispose();
+      segmentFieldMaterials.forEach((material) => material.dispose());
       segmentCellBevelMaterials.forEach((material) => material.dispose());
       segmentDisabledMaterial.dispose();
       crystalMaterial.dispose();
@@ -5234,6 +5338,7 @@ export default function PixelArtBufferViews({
     mode === "segmentIndentedLitOnly" ||
     mode === "segmentIndentedAppliedOnly" ||
     mode === "segmentIndentedAppliedOrbitOnly";
+  const showSegmentFieldBlendControl = showSegmentFieldModeControl;
   const showInsetNormalControls =
     mode === "segmentIndentedNormalOnly" ||
     mode === "segmentIndentedLitOnly" ||
@@ -5266,8 +5371,10 @@ export default function PixelArtBufferViews({
       directionStrength: number;
       baseNormalWeight: number;
       litThreshold: number;
+      litFalloff: number;
       darkenStrength: number;
-      smoothField: boolean;
+      fieldMode: "quantized" | "smooth" | "blend";
+      fieldBlend: number;
     }>,
   ) => {
     if (typeof next.fieldUnderlay === "number") {
@@ -5276,17 +5383,24 @@ export default function PixelArtBufferViews({
     if (typeof next.directionStrength === "number") {
       setInsetDirectionStrength(next.directionStrength);
     }
-    if (typeof next.baseNormalWeight === "number") {
-      setInsetBaseNormalWeight(next.baseNormalWeight);
-    }
     if (typeof next.litThreshold === "number") {
       setInsetLitThreshold(next.litThreshold);
+    }
+    if (typeof next.litFalloff === "number") {
+      setInsetLitFalloff(next.litFalloff);
     }
     if (typeof next.darkenStrength === "number") {
       setInsetDarkenStrength(next.darkenStrength);
     }
-    if (typeof next.smoothField === "boolean") {
-      setInsetSmoothField(next.smoothField);
+    if (
+      next.fieldMode === "quantized" ||
+      next.fieldMode === "smooth" ||
+      next.fieldMode === "blend"
+    ) {
+      setInsetFieldMode(next.fieldMode);
+    }
+    if (typeof next.fieldBlend === "number") {
+      setInsetFieldBlend(next.fieldBlend);
     }
     if (typeof window === "undefined") return;
     const merged = {
@@ -5721,15 +5835,19 @@ export default function PixelArtBufferViews({
             >
               <span>Field Mode</span>
               <select
-                value={insetSmoothField ? "smooth" : "quantized"}
+                value={insetFieldMode}
                 onChange={(event) =>
                   updateInsetControls({
-                    smoothField: event.currentTarget.value === "smooth",
+                    fieldMode: event.currentTarget.value as
+                      | "quantized"
+                      | "smooth"
+                      | "blend",
                   })
                 }
               >
                 <option value="quantized">Quantized</option>
                 <option value="smooth">Smooth</option>
+                <option value="blend">Blend</option>
               </select>
             </label>
             <button
@@ -5738,7 +5856,7 @@ export default function PixelArtBufferViews({
               aria-label="Reset field mode"
               onClick={() =>
                 updateInsetControls({
-                  smoothField: INSET_SMOOTH_FIELD,
+                  fieldMode: INSET_FIELD_MODE,
                 })
               }
             >
@@ -5791,6 +5909,48 @@ export default function PixelArtBufferViews({
         </div>
       )}
 
+      {showSegmentFieldBlendControl && insetFieldMode === "blend" && (
+        <div className="pixel-buffer-demo__controls">
+          <div className="pixel-buffer-demo__control-row">
+            <label
+              className="pixel-buffer-demo__control"
+              aria-label="Field blend"
+            >
+              <span>Field Blend</span>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={insetFieldBlend}
+                onChange={(event) =>
+                  updateInsetControls({
+                    fieldBlend: Number(event.currentTarget.value),
+                  })
+                }
+              />
+            </label>
+            <button
+              className="pixel-buffer-demo__reset"
+              type="button"
+              aria-label="Reset field blend"
+              onClick={() =>
+                updateInsetControls({
+                  fieldBlend: INSET_FIELD_BLEND,
+                })
+              }
+            >
+              <svg viewBox="0 0 32 32" aria-hidden="true">
+                <path
+                  d="M18,28A12,12,0,1,0,6,16v6.2L2.4,18.6,1,20l6,6,6-6-1.4-1.4L8,22.2V16H8A10,10,0,1,1,18,26Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       {showInsetNormalControls && (
         <div className="pixel-buffer-demo__controls">
           <div className="pixel-buffer-demo__control-row">
@@ -5831,82 +5991,83 @@ export default function PixelArtBufferViews({
             </button>
           </div>
 
-          <div className="pixel-buffer-demo__control-row">
-            <label
-              className="pixel-buffer-demo__control"
-              aria-label="Inset base normal weight"
-            >
-              <span>Base Normal</span>
-              <input
-                type="range"
-                min="0"
-                max="2"
-                step="0.01"
-                value={insetBaseNormalWeight}
-                onChange={(event) =>
-                  updateInsetControls({
-                    baseNormalWeight: Number(event.currentTarget.value),
-                  })
-                }
-              />
-            </label>
-            <button
-              className="pixel-buffer-demo__reset"
-              type="button"
-              aria-label="Reset inset base normal weight"
-              onClick={() =>
-                updateInsetControls({
-                  baseNormalWeight: INSET_BASE_NORMAL_WEIGHT,
-                })
-              }
-            >
-              <svg viewBox="0 0 32 32" aria-hidden="true">
-                <path
-                  d="M18,28A12,12,0,1,0,6,16v6.2L2.4,18.6,1,20l6,6,6-6-1.4-1.4L8,22.2V16H8A10,10,0,1,1,18,26Z"
-                  fill="currentColor"
-                />
-              </svg>
-            </button>
-          </div>
-
           {showInsetLitThresholdControl && (
-            <div className="pixel-buffer-demo__control-row">
-              <label
-                className="pixel-buffer-demo__control"
-                aria-label="Inset lit threshold"
-              >
-                <span>Lit Threshold</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={insetLitThreshold}
-                  onChange={(event) =>
+            <>
+              <div className="pixel-buffer-demo__control-row">
+                <label
+                  className="pixel-buffer-demo__control"
+                  aria-label="Primary threshold"
+                >
+                  <span>Primary Threshold</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={insetLitThreshold}
+                    onChange={(event) =>
+                      updateInsetControls({
+                        litThreshold: Number(event.currentTarget.value),
+                      })
+                    }
+                  />
+                </label>
+                <button
+                  className="pixel-buffer-demo__reset"
+                  type="button"
+                  aria-label="Reset primary threshold"
+                  onClick={() =>
                     updateInsetControls({
-                      litThreshold: Number(event.currentTarget.value),
+                      litThreshold: INSET_LIT_THRESHOLD,
                     })
                   }
-                />
-              </label>
-              <button
-                className="pixel-buffer-demo__reset"
-                type="button"
-                aria-label="Reset inset lit threshold"
-                onClick={() =>
-                  updateInsetControls({
-                    litThreshold: INSET_LIT_THRESHOLD,
-                  })
-                }
-              >
-                <svg viewBox="0 0 32 32" aria-hidden="true">
-                  <path
-                    d="M18,28A12,12,0,1,0,6,16v6.2L2.4,18.6,1,20l6,6,6-6-1.4-1.4L8,22.2V16H8A10,10,0,1,1,18,26Z"
-                    fill="currentColor"
+                >
+                  <svg viewBox="0 0 32 32" aria-hidden="true">
+                    <path
+                      d="M18,28A12,12,0,1,0,6,16v6.2L2.4,18.6,1,20l6,6,6-6-1.4-1.4L8,22.2V16H8A10,10,0,1,1,18,26Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <div className="pixel-buffer-demo__control-row">
+                <label
+                  className="pixel-buffer-demo__control"
+                  aria-label="Threshold falloff"
+                >
+                  <span>Threshold Falloff</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="0.5"
+                    step="0.01"
+                    value={insetLitFalloff}
+                    onChange={(event) =>
+                      updateInsetControls({
+                        litFalloff: Number(event.currentTarget.value),
+                      })
+                    }
                   />
-                </svg>
-              </button>
-            </div>
+                </label>
+                <button
+                  className="pixel-buffer-demo__reset"
+                  type="button"
+                  aria-label="Reset threshold falloff"
+                  onClick={() =>
+                    updateInsetControls({
+                      litFalloff: INSET_LIT_FALLOFF,
+                    })
+                  }
+                >
+                  <svg viewBox="0 0 32 32" aria-hidden="true">
+                    <path
+                      d="M18,28A12,12,0,1,0,6,16v6.2L2.4,18.6,1,20l6,6,6-6-1.4-1.4L8,22.2V16H8A10,10,0,1,1,18,26Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </>
           )}
 
           {(mode === "segmentIndentedAppliedOnly" ||
