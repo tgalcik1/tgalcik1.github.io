@@ -5,31 +5,160 @@ interface Props {
   title: string;
   description: string;
   publishedAt: Date;
+  variant?: "default" | "background";
+  thumbnail?: {
+    src: string;
+    alt: string;
+  };
 }
 
-const { href, category, title, description, publishedAt } = Astro.props;
+const {
+  href,
+  category,
+  title,
+  description,
+  publishedAt,
+  thumbnail,
+  variant = "default",
+} = Astro.props;
+const isBackgroundVariant = variant === "background" && thumbnail;
 ---
 
-<a class="post-preview card" href={href}>
-  <span class="post-preview__category">{category}</span>
-  <h3>{title}</h3>
-  <p>{description}</p>
-  <time datetime={publishedAt.toISOString()}>
-    {publishedAt.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      timeZone: "UTC",
-    })}
-  </time>
+<a
+  class:list={[
+    "post-preview card",
+    { "post-preview--background": isBackgroundVariant },
+  ]}
+  href={href}
+  style={
+    isBackgroundVariant
+      ? `--post-preview-image: linear-gradient(135deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.08) 38%, rgba(0, 0, 0, 0.55) 100%), url("${thumbnail.src}")`
+      : undefined
+  }
+>
+  {
+    thumbnail && !isBackgroundVariant && (
+      <div class="post-preview__media">
+        <img src={thumbnail.src} alt={thumbnail.alt} loading="lazy" />
+      </div>
+    )
+  }
+  <div class="post-preview__content">
+    <div class="post-preview__body">
+      <span class="post-preview__category">{category}</span>
+      <h3>{title}</h3>
+      <p>{description}</p>
+    </div>
+    <time datetime={publishedAt.toISOString()}>
+      {publishedAt.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        timeZone: "UTC",
+      })}
+    </time>
+  </div>
 </a>
 
 <style>
   .post-preview {
     display: grid;
-    gap: 0.8rem;
-    padding: 1.25rem;
+    gap: 0;
+    padding: 0;
     min-height: 14rem;
+    align-items: stretch;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    clip-path: inset(0);
+    isolation: isolate;
+    contain: paint;
+    backface-visibility: hidden;
+    box-shadow: none;
+    transform: translate3d(0, 0, 0);
+    transition:
+      transform 180ms ease,
+      border-color 180ms ease,
+      background-color 180ms ease;
+  }
+
+  .post-preview:hover,
+  .post-preview:focus-visible {
+    transform: translate3d(0, -2px, 0);
+    box-shadow: none;
+    background: var(--panel-bg);
+    border-color: var(--text-muted);
+  }
+
+  .post-preview__media {
+    overflow: hidden;
+    height: 100%;
+    border-right: 1px solid var(--border);
+  }
+
+  .post-preview--background {
+    position: relative;
+    min-height: 18rem;
+    background-color: var(--card-bg);
+    background-image: var(--post-preview-image);
+    background-position: center;
+    background-size: cover;
+  }
+
+  .post-preview--background:hover,
+  .post-preview--background:focus-visible {
+    background-color: var(--panel-bg);
+    background-image: var(--post-preview-image);
+    background-position: center;
+    background-size: cover;
+  }
+
+  .post-preview--background::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(180deg, rgba(9, 12, 18, 0.02) 0%, rgba(9, 12, 18, 0.62) 100%);
+    pointer-events: none;
+  }
+
+  .post-preview--background .post-preview__content {
+    position: relative;
+    z-index: 1;
+    grid-template-columns: 1fr;
+    align-content: end;
+    min-height: 100%;
+    padding: 1.4rem;
+    gap: 0.9rem;
+  }
+
+  .post-preview--background .post-preview__body {
+    align-content: end;
+  }
+
+  .post-preview--background .post-preview__category,
+  .post-preview--background h3,
+  .post-preview--background p,
+  .post-preview--background time {
+    color: #f5efe6;
+  }
+
+  .post-preview--background p {
+    max-width: 28rem;
+  }
+
+  .post-preview__media img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+  }
+
+  .post-preview__content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0 2rem;
+    padding: 1.25rem;
+    min-width: 0;
   }
 
   .post-preview__category,
@@ -43,15 +172,27 @@ const { href, category, title, description, publishedAt } = Astro.props;
     color: var(--teal);
   }
 
+  .post-preview__body {
+    display: grid;
+    gap: 0.55rem;
+    align-content: center;
+    min-width: 0;
+  }
+
   .post-preview h3 {
     font-size: 1.45rem;
   }
 
   .post-preview p {
     color: var(--text-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .post-preview time {
     color: var(--text-muted);
+    white-space: nowrap;
+    align-self: start;
   }
 </style>

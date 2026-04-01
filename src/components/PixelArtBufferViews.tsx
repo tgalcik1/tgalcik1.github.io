@@ -19,6 +19,8 @@ type ViewMode =
   | "segmentIndentedApplied"
   | "segmentIndentedAppliedOrbit"
   | "segmentIndentedAppliedPointLights"
+  | "segmentIndentedAppliedFinal"
+  | "segmentIndentedAppliedFinalPointLights"
   | "segmentBakedNormalMapTexture"
   | "segmentBakedNormalMapView"
   | "segmentBakedNormalMapApplied"
@@ -49,6 +51,8 @@ interface Props {
     | "segmentIndentedAppliedOnly"
     | "segmentIndentedAppliedOrbitOnly"
     | "segmentIndentedAppliedPointLightsOnly"
+    | "segmentIndentedAppliedFinalOnly"
+    | "segmentIndentedAppliedFinalPointLightsOnly"
     | "segmentBakedNormalMapTextureOnly"
     | "segmentBakedNormalMapViewOnly"
     | "segmentBakedNormalMapAppliedOnly"
@@ -82,6 +86,12 @@ const SEGMENT_INDENTED_APPLIED_ORBIT_VIEW_MODES: ViewMode[] = [
 ];
 const SEGMENT_INDENTED_APPLIED_POINT_LIGHTS_VIEW_MODES: ViewMode[] = [
   "segmentIndentedAppliedPointLights",
+];
+const SEGMENT_INDENTED_APPLIED_FINAL_VIEW_MODES: ViewMode[] = [
+  "segmentIndentedAppliedFinal",
+];
+const SEGMENT_INDENTED_APPLIED_FINAL_POINT_LIGHTS_VIEW_MODES: ViewMode[] = [
+  "segmentIndentedAppliedFinalPointLights",
 ];
 const SEGMENT_BAKED_NORMAL_MAP_TEXTURE_VIEW_MODES: ViewMode[] = [
   "segmentBakedNormalMapTexture",
@@ -170,6 +180,11 @@ export default function PixelArtBufferViews({
   mode = "full",
   showSegmentTexturePicker = false,
 }: Props) {
+  const forcedSegmentTextureId =
+    mode === "segmentIndentedAppliedFinalOnly" ||
+    mode === "segmentIndentedAppliedFinalPointLightsOnly"
+      ? "grid"
+      : null;
   const [selectedSegmentTextureId, setSelectedSegmentTextureId] = useState(
     SEGMENT_TEXTURE_OPTIONS[0].id,
   );
@@ -252,6 +267,9 @@ export default function PixelArtBufferViews({
   const segmentIndentedAppliedRef = useRef<HTMLDivElement>(null);
   const segmentIndentedAppliedOrbitRef = useRef<HTMLDivElement>(null);
   const segmentIndentedAppliedPointLightsRef = useRef<HTMLDivElement>(null);
+  const segmentIndentedAppliedFinalRef = useRef<HTMLDivElement>(null);
+  const segmentIndentedAppliedFinalPointLightsRef =
+    useRef<HTMLDivElement>(null);
   const segmentBakedNormalMapTextureRef = useRef<HTMLDivElement>(null);
   const segmentBakedNormalMapViewRef = useRef<HTMLDivElement>(null);
   const segmentBakedNormalMapAppliedRef = useRef<HTMLDivElement>(null);
@@ -266,8 +284,10 @@ export default function PixelArtBufferViews({
   const normalEdgeMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
   const augmentedBlendMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
   const blendMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
+  const effectiveSegmentTextureId =
+    forcedSegmentTextureId ?? selectedSegmentTextureId;
   const selectedSegmentTexture =
-    SEGMENT_TEXTURE_OPTIONS.find(({ id }) => id === selectedSegmentTextureId) ??
+    SEGMENT_TEXTURE_OPTIONS.find(({ id }) => id === effectiveSegmentTextureId) ??
     SEGMENT_TEXTURE_OPTIONS[0];
   const usesSegmentTexture =
     mode === "segmentOnly" ||
@@ -283,6 +303,8 @@ export default function PixelArtBufferViews({
     mode === "segmentIndentedAppliedOnly" ||
     mode === "segmentIndentedAppliedOrbitOnly" ||
     mode === "segmentIndentedAppliedPointLightsOnly" ||
+    mode === "segmentIndentedAppliedFinalOnly" ||
+    mode === "segmentIndentedAppliedFinalPointLightsOnly" ||
     mode === "segmentBakedNormalMapTextureOnly" ||
     mode === "segmentBakedNormalMapViewOnly" ||
     mode === "segmentBakedNormalMapAppliedOnly" ||
@@ -299,6 +321,8 @@ export default function PixelArtBufferViews({
     mode === "segmentIndentedAppliedOnly" ||
     mode === "segmentIndentedAppliedOrbitOnly" ||
     mode === "segmentIndentedAppliedPointLightsOnly" ||
+    mode === "segmentIndentedAppliedFinalOnly" ||
+    mode === "segmentIndentedAppliedFinalPointLightsOnly" ||
     mode === "segmentBakedNormalMapTextureOnly" ||
     mode === "segmentBakedNormalMapViewOnly" ||
     mode === "segmentBakedNormalMapAppliedOnly";
@@ -523,10 +547,16 @@ export default function PixelArtBufferViews({
                               : mode === "segmentIndentedAppliedOnly"
                                 ? SEGMENT_INDENTED_APPLIED_VIEW_MODES
                                 : mode === "segmentIndentedAppliedOrbitOnly"
-                                  ? SEGMENT_INDENTED_APPLIED_ORBIT_VIEW_MODES
+                                ? SEGMENT_INDENTED_APPLIED_ORBIT_VIEW_MODES
+                                : mode ===
+                                    "segmentIndentedAppliedPointLightsOnly"
+                                  ? SEGMENT_INDENTED_APPLIED_POINT_LIGHTS_VIEW_MODES
                                   : mode ===
-                                      "segmentIndentedAppliedPointLightsOnly"
-                                    ? SEGMENT_INDENTED_APPLIED_POINT_LIGHTS_VIEW_MODES
+                                      "segmentIndentedAppliedFinalOnly"
+                                    ? SEGMENT_INDENTED_APPLIED_FINAL_VIEW_MODES
+                                    : mode ===
+                                        "segmentIndentedAppliedFinalPointLightsOnly"
+                                      ? SEGMENT_INDENTED_APPLIED_FINAL_POINT_LIGHTS_VIEW_MODES
                                     : mode ===
                                         "segmentBakedNormalMapTextureOnly"
                                       ? SEGMENT_BAKED_NORMAL_MAP_TEXTURE_VIEW_MODES
@@ -565,6 +595,9 @@ export default function PixelArtBufferViews({
       segmentIndentedAppliedOrbit: segmentIndentedAppliedOrbitRef.current,
       segmentIndentedAppliedPointLights:
         segmentIndentedAppliedPointLightsRef.current,
+      segmentIndentedAppliedFinal: segmentIndentedAppliedFinalRef.current,
+      segmentIndentedAppliedFinalPointLights:
+        segmentIndentedAppliedFinalPointLightsRef.current,
       segmentBakedNormalMapTexture: segmentBakedNormalMapTextureRef.current,
       segmentBakedNormalMapView: segmentBakedNormalMapViewRef.current,
       segmentBakedNormalMapApplied: segmentBakedNormalMapAppliedRef.current,
@@ -2388,6 +2421,8 @@ export default function PixelArtBufferViews({
         objectIdOutlineStrength: { value: objectIdOutlineStrength },
         internalDepthOutlineStrength: { value: internalDepthOutlineStrength },
         normalOutlineStrength: { value: normalOutlineStrength },
+        inputIsSRGB: { value: 0 },
+        maskLightMarkersByColor: { value: 0 },
       },
       vertexShader: `
         varying vec2 vUv;
@@ -2408,6 +2443,8 @@ export default function PixelArtBufferViews({
         uniform float objectIdOutlineStrength;
         uniform float internalDepthOutlineStrength;
         uniform float normalOutlineStrength;
+        uniform float inputIsSRGB;
+        uniform float maskLightMarkersByColor;
 
         varying vec2 vUv;
 
@@ -2421,6 +2458,26 @@ export default function PixelArtBufferViews({
 
         vec3 sampleNormal(vec2 uv) {
           return normalize(texture2D(tNormals, uv).xyz * 2.0 - 1.0);
+        }
+
+        float isLightMarkerId(float id) {
+          return (1.0 - step(0.0001, abs(id - ${ (0x19 / 255).toFixed(6) }))) +
+            (1.0 - step(0.0001, abs(id - ${ (0x29 / 255).toFixed(6) }))) +
+            (1.0 - step(0.0001, abs(id - ${ (0x39 / 255).toFixed(6) })));
+        }
+
+        float matchesLightMarkerColor(vec3 color) {
+          vec3 markerA = vec3(1.0, 0.107023, 0.152926);
+          vec3 markerB = vec3(0.111932, 0.822786, 0.715694);
+          vec3 markerC = vec3(0.964686, 0.745404, 0.032983);
+          float threshold = 0.08;
+          return 1.0 - step(
+            threshold,
+            min(
+              min(length(color - markerA), length(color - markerB)),
+              length(color - markerC)
+            )
+          );
         }
 
         float ownedObjectEdge(float centerId, float neighborId, float discontinuity, float depthDelta) {
@@ -2450,8 +2507,25 @@ export default function PixelArtBufferViews({
           return mix(upper, lower, cutoff);
         }
 
+        vec3 sRGBToLinear(vec3 color) {
+          vec3 cutoff = step(color, vec3(0.04045));
+          vec3 lower = color / 12.92;
+          vec3 upper = pow((max(color, vec3(0.0)) + 0.055) / 1.055, vec3(2.4));
+          return mix(upper, lower, cutoff);
+        }
+
         void main() {
           vec3 color = texture2D(tColor, vUv).rgb;
+          if (inputIsSRGB > 0.5) {
+            color = sRGBToLinear(color);
+          }
+          if (
+            maskLightMarkersByColor > 0.5 &&
+            matchesLightMarkerColor(color) > 0.5
+          ) {
+            gl_FragColor = vec4(linearToSRGB(clamp(color, 0.0, 1.0)), 1.0);
+            return;
+          }
 
           float d_c = sampleDepth(vUv);
           float d_t = sampleDepth(vUv + vec2(0.0, texelSize.y));
@@ -2471,11 +2545,21 @@ export default function PixelArtBufferViews({
           float id_r = sampleId(vUv + vec2(texelSize.x, 0.0));
           float id_bl = sampleId(vUv + vec2(-texelSize.x, -texelSize.y));
           float id_br = sampleId(vUv + vec2(texelSize.x, -texelSize.y));
+          float marker_c = clamp(isLightMarkerId(id_c), 0.0, 1.0);
+          float marker_t = clamp(isLightMarkerId(id_t), 0.0, 1.0);
+          float marker_b = clamp(isLightMarkerId(id_b), 0.0, 1.0);
+          float marker_l = clamp(isLightMarkerId(id_l), 0.0, 1.0);
+          float marker_r = clamp(isLightMarkerId(id_r), 0.0, 1.0);
 
-          float disc_t = step(0.0001, abs(id_t - id_c));
-          float disc_b = step(0.0001, abs(id_b - id_c));
-          float disc_l = step(0.0001, abs(id_l - id_c));
-          float disc_r = step(0.0001, abs(id_r - id_c));
+          if (marker_c > 0.5) {
+            gl_FragColor = vec4(linearToSRGB(clamp(color, 0.0, 1.0)), 1.0);
+            return;
+          }
+
+          float disc_t = step(0.0001, abs(id_t - id_c)) * (1.0 - max(marker_c, marker_t));
+          float disc_b = step(0.0001, abs(id_b - id_c)) * (1.0 - max(marker_c, marker_b));
+          float disc_l = step(0.0001, abs(id_l - id_c)) * (1.0 - max(marker_c, marker_l));
+          float disc_r = step(0.0001, abs(id_r - id_c)) * (1.0 - max(marker_c, marker_r));
 
           float object_t = ownedObjectEdge(id_c, id_t, disc_t, delta_t);
           float object_b = ownedObjectEdge(id_c, id_b, disc_b, delta_b);
@@ -2511,7 +2595,7 @@ export default function PixelArtBufferViews({
             smoothstep(normalThreshold, normalThreshold * 2.0, normalDifference),
             0.0,
             1.0
-          );
+          ) * (1.0 - marker_c);
 
           float redMask = max(
             objectEdge * objectIdOutlineStrength,
@@ -4636,6 +4720,96 @@ export default function PixelArtBufferViews({
     pointLightA.add(pointLightMarkerA);
     pointLightB.add(pointLightMarkerB);
     pointLightC.add(pointLightMarkerC);
+    objectIdEntries.push({
+      mesh: pointLightMarkerA,
+      material: pointLightMarkerA.material,
+      objectIdMaterial: new THREE.MeshBasicMaterial({ color: "#191919" }),
+    });
+    objectIdEntries.push({
+      mesh: pointLightMarkerB,
+      material: pointLightMarkerB.material,
+      objectIdMaterial: new THREE.MeshBasicMaterial({ color: "#292929" }),
+    });
+    objectIdEntries.push({
+      mesh: pointLightMarkerC,
+      material: pointLightMarkerC.material,
+      objectIdMaterial: new THREE.MeshBasicMaterial({ color: "#393939" }),
+    });
+    segmentEntries.push({
+      mesh: pointLightMarkerA,
+      material: pointLightMarkerA.material,
+      segmentMaterial: segmentDisabledMaterial,
+    });
+    segmentEntries.push({
+      mesh: pointLightMarkerB,
+      material: pointLightMarkerB.material,
+      segmentMaterial: segmentDisabledMaterial,
+    });
+    segmentEntries.push({
+      mesh: pointLightMarkerC,
+      material: pointLightMarkerC.material,
+      segmentMaterial: segmentDisabledMaterial,
+    });
+    segmentFieldEntries.push({
+      mesh: pointLightMarkerA,
+      material: pointLightMarkerA.material,
+      fieldMaterial: segmentDisabledMaterial,
+    });
+    segmentFieldEntries.push({
+      mesh: pointLightMarkerB,
+      material: pointLightMarkerB.material,
+      fieldMaterial: segmentDisabledMaterial,
+    });
+    segmentFieldEntries.push({
+      mesh: pointLightMarkerC,
+      material: pointLightMarkerC.material,
+      fieldMaterial: segmentDisabledMaterial,
+    });
+    segmentParticipationEntries.push({
+      mesh: pointLightMarkerA,
+      material: pointLightMarkerA.material,
+      participationMaterial: segmentDisabledMaterial,
+    });
+    segmentParticipationEntries.push({
+      mesh: pointLightMarkerB,
+      material: pointLightMarkerB.material,
+      participationMaterial: segmentDisabledMaterial,
+    });
+    segmentParticipationEntries.push({
+      mesh: pointLightMarkerC,
+      material: pointLightMarkerC.material,
+      participationMaterial: segmentDisabledMaterial,
+    });
+    segmentCenterFieldEntries.push({
+      mesh: pointLightMarkerA,
+      material: pointLightMarkerA.material,
+      fieldMaterial: segmentDisabledMaterial,
+    });
+    segmentCenterFieldEntries.push({
+      mesh: pointLightMarkerB,
+      material: pointLightMarkerB.material,
+      fieldMaterial: segmentDisabledMaterial,
+    });
+    segmentCenterFieldEntries.push({
+      mesh: pointLightMarkerC,
+      material: pointLightMarkerC.material,
+      fieldMaterial: segmentDisabledMaterial,
+    });
+    segmentBakedNormalMapEntries.push({
+      mesh: pointLightMarkerA,
+      material: pointLightMarkerA.material,
+      bakedNormalMapMaterial: segmentDisabledMaterial,
+    });
+    segmentBakedNormalMapEntries.push({
+      mesh: pointLightMarkerB,
+      material: pointLightMarkerB.material,
+      bakedNormalMapMaterial: segmentDisabledMaterial,
+    });
+    segmentBakedNormalMapEntries.push({
+      mesh: pointLightMarkerC,
+      material: pointLightMarkerC.material,
+      bakedNormalMapMaterial: segmentDisabledMaterial,
+    });
     pointLightA.visible = false;
     pointLightB.visible = false;
     pointLightC.visible = false;
@@ -4765,6 +4939,8 @@ export default function PixelArtBufferViews({
         activeMode === "segmentIndentedApplied" ||
         activeMode === "segmentIndentedAppliedOrbit" ||
         activeMode === "segmentIndentedAppliedPointLights" ||
+        activeMode === "segmentIndentedAppliedFinal" ||
+        activeMode === "segmentIndentedAppliedFinalPointLights" ||
         activeMode === "segmentBakedNormalMapView" ||
         activeMode === "segmentBakedNormalMapApplied"
       ) {
@@ -4791,6 +4967,8 @@ export default function PixelArtBufferViews({
           activeMode === "segmentIndentedApplied" ||
           activeMode === "segmentIndentedAppliedOrbit" ||
           activeMode === "segmentIndentedAppliedPointLights" ||
+          activeMode === "segmentIndentedAppliedFinal" ||
+          activeMode === "segmentIndentedAppliedFinalPointLights" ||
           activeMode === "segmentBakedNormalMapView" ||
           activeMode === "segmentBakedNormalMapApplied"
         ) {
@@ -4821,6 +4999,8 @@ export default function PixelArtBufferViews({
             activeMode === "segmentIndentedApplied" ||
             activeMode === "segmentIndentedAppliedOrbit" ||
             activeMode === "segmentIndentedAppliedPointLights" ||
+            activeMode === "segmentIndentedAppliedFinal" ||
+            activeMode === "segmentIndentedAppliedFinalPointLights" ||
             activeMode === "segmentBakedNormalMapView" ||
             activeMode === "segmentBakedNormalMapApplied"
           ) {
@@ -4850,6 +5030,8 @@ export default function PixelArtBufferViews({
               activeMode === "segmentIndentedApplied" ||
               activeMode === "segmentIndentedAppliedOrbit" ||
               activeMode === "segmentIndentedAppliedPointLights" ||
+              activeMode === "segmentIndentedAppliedFinal" ||
+              activeMode === "segmentIndentedAppliedFinalPointLights" ||
               activeMode === "segmentBakedNormalMapView" ||
               activeMode === "segmentBakedNormalMapApplied"
             ) {
@@ -4873,13 +5055,38 @@ export default function PixelArtBufferViews({
             colorTarget.texture.minFilter = THREE.NearestFilter;
             colorTarget.texture.magFilter = THREE.NearestFilter;
             colorTarget.texture.generateMipmaps = false;
-            if (activeMode === "segmentIndentedAppliedPointLights") {
+            if (
+              activeMode === "segmentIndentedAppliedPointLights" ||
+              activeMode === "segmentIndentedAppliedFinal" ||
+              activeMode === "segmentIndentedAppliedFinalPointLights"
+            ) {
               colorTarget.texture.type = THREE.HalfFloatType;
               colorTarget.texture.colorSpace = THREE.LinearSRGBColorSpace;
             }
             standaloneColorTarget = colorTarget;
 
-            if (activeMode === "segmentIndentedAppliedPointLights") {
+            if (
+              activeMode === "segmentIndentedAppliedPointLights" ||
+              activeMode === "segmentIndentedAppliedFinal" ||
+              activeMode === "segmentIndentedAppliedFinalPointLights"
+            ) {
+              if (
+                activeMode === "segmentIndentedAppliedFinal" ||
+                activeMode === "segmentIndentedAppliedFinalPointLights"
+              ) {
+                const finalNormalTarget = new THREE.WebGLRenderTarget(1, 1);
+                finalNormalTarget.texture.minFilter = THREE.NearestFilter;
+                finalNormalTarget.texture.magFilter = THREE.NearestFilter;
+                finalNormalTarget.texture.generateMipmaps = false;
+                standaloneNormalTarget = finalNormalTarget;
+              }
+
+              const lightTarget = new THREE.WebGLRenderTarget(1, 1);
+              lightTarget.texture.minFilter = THREE.NearestFilter;
+              lightTarget.texture.magFilter = THREE.NearestFilter;
+              lightTarget.texture.generateMipmaps = false;
+              standaloneLightTarget = lightTarget;
+
               const worldPositionTarget = new THREE.WebGLRenderTarget(1, 1);
               worldPositionTarget.texture.minFilter = THREE.NearestFilter;
               worldPositionTarget.texture.magFilter = THREE.NearestFilter;
@@ -5078,6 +5285,8 @@ export default function PixelArtBufferViews({
           mount === mounts.segmentIndentedApplied ||
           mount === mounts.segmentIndentedAppliedOrbit ||
           mount === mounts.segmentIndentedAppliedPointLights ||
+          mount === mounts.segmentIndentedAppliedFinal ||
+          mount === mounts.segmentIndentedAppliedFinalPointLights ||
           mount === mounts.segmentBakedNormalMapView ||
           mount === mounts.segmentBakedNormalMapApplied ||
           mount === mounts.combinedMask ||
@@ -5108,6 +5317,12 @@ export default function PixelArtBufferViews({
                                 : mount ===
                                     mounts.segmentIndentedAppliedPointLights
                                   ? "segmentIndentedAppliedPointLights"
+                                  : mount ===
+                                      mounts.segmentIndentedAppliedFinal
+                                    ? "segmentIndentedAppliedFinal"
+                                    : mount ===
+                                        mounts.segmentIndentedAppliedFinalPointLights
+                                      ? "segmentIndentedAppliedFinalPointLights"
                                   : mount === mounts.segmentBakedNormalMapView
                                     ? "segmentBakedNormalMapView"
                                     : mount ===
@@ -5128,6 +5343,8 @@ export default function PixelArtBufferViews({
             mount === mounts.segmentIndentedApplied ||
             mount === mounts.segmentIndentedAppliedOrbit ||
             mount === mounts.segmentIndentedAppliedPointLights ||
+            mount === mounts.segmentIndentedAppliedFinal ||
+            mount === mounts.segmentIndentedAppliedFinalPointLights ||
             mount === mounts.segmentBakedNormalMapView ||
             mount === mounts.segmentBakedNormalMapApplied
           ) {
@@ -5147,6 +5364,8 @@ export default function PixelArtBufferViews({
               mount === mounts.segmentIndentedApplied ||
               mount === mounts.segmentIndentedAppliedOrbit ||
               mount === mounts.segmentIndentedAppliedPointLights ||
+              mount === mounts.segmentIndentedAppliedFinal ||
+              mount === mounts.segmentIndentedAppliedFinalPointLights ||
               mount === mounts.segmentBakedNormalMapView ||
               mount === mounts.segmentBakedNormalMapApplied
             ) {
@@ -5156,6 +5375,13 @@ export default function PixelArtBufferViews({
                 renderHeight,
               );
               standaloneSegmentFieldTarget?.setSize(renderWidth, renderHeight);
+              if (
+                mount === mounts.segmentIndentedAppliedFinal ||
+                mount === mounts.segmentIndentedAppliedFinalPointLights
+              ) {
+                standaloneNormalTarget?.setSize(renderWidth, renderHeight);
+              }
+              standaloneLightTarget?.setSize(renderWidth, renderHeight);
               standaloneWorldPositionTarget?.setSize(renderWidth, renderHeight);
               standaloneSegmentBakedNormalMapTarget?.setSize(
                 renderWidth,
@@ -5424,6 +5650,7 @@ export default function PixelArtBufferViews({
               standaloneObjectIdTarget.texture;
             augmentedBlendMaterial.uniforms.tLight.value =
               standaloneLightTarget.texture;
+            augmentedBlendMaterial.uniforms.inputIsSRGB.value = 0;
             augmentedBlendMaterial.uniforms.texelSize.value.set(
               1 / standaloneDepthTarget.width,
               1 / standaloneDepthTarget.height,
@@ -5517,6 +5744,8 @@ export default function PixelArtBufferViews({
           mode === "segmentIndentedApplied" ||
           mode === "segmentIndentedAppliedOrbit" ||
           mode === "segmentIndentedAppliedPointLights" ||
+          mode === "segmentIndentedAppliedFinal" ||
+          mode === "segmentIndentedAppliedFinalPointLights" ||
           mode === "segmentBakedNormalMapView" ||
           mode === "segmentBakedNormalMapApplied"
         ) {
@@ -5546,12 +5775,15 @@ export default function PixelArtBufferViews({
             mode === "segmentIndentedApplied" ||
             mode === "segmentIndentedAppliedOrbit" ||
             mode === "segmentIndentedAppliedPointLights" ||
+            mode === "segmentIndentedAppliedFinal" ||
+            mode === "segmentIndentedAppliedFinalPointLights" ||
             mode === "segmentBakedNormalMapView" ||
             mode === "segmentBakedNormalMapApplied"
           ) {
             if (!standaloneColorTarget) return;
             const usingPointLights =
-              mode === "segmentIndentedAppliedPointLights";
+              mode === "segmentIndentedAppliedPointLights" ||
+              mode === "segmentIndentedAppliedFinalPointLights";
             const keyLightVisible = keyLight.visible;
             const pointLightAVisible = pointLightA.visible;
             const pointLightBVisible = pointLightB.visible;
@@ -5573,7 +5805,20 @@ export default function PixelArtBufferViews({
           }
 
           renderer.setRenderTarget(target);
+          const finalMarkerVisible = pointLightA.visible;
+          const finalMarkerBVisible = pointLightB.visible;
+          const finalMarkerCVisible = pointLightC.visible;
+          if (mode === "segmentIndentedAppliedFinalPointLights") {
+            pointLightA.visible = true;
+            pointLightB.visible = true;
+            pointLightC.visible = true;
+          }
           renderSegments(renderer, camera);
+          if (mode === "segmentIndentedAppliedFinalPointLights") {
+            pointLightA.visible = finalMarkerVisible;
+            pointLightB.visible = finalMarkerBVisible;
+            pointLightC.visible = finalMarkerCVisible;
+          }
           renderer.setRenderTarget(null);
 
           const segmentObjectIdTarget = depthEdgeTargets.get("objectIds");
@@ -5587,25 +5832,55 @@ export default function PixelArtBufferViews({
             return;
           }
           renderer.setRenderTarget(segmentObjectIdTarget);
+          if (mode === "segmentIndentedAppliedFinalPointLights") {
+            pointLightA.visible = true;
+            pointLightB.visible = true;
+            pointLightC.visible = true;
+          }
           renderObjectIds(renderer, camera);
+          if (mode === "segmentIndentedAppliedFinalPointLights") {
+            pointLightA.visible = finalMarkerVisible;
+            pointLightB.visible = finalMarkerBVisible;
+            pointLightC.visible = finalMarkerCVisible;
+          }
           renderer.setRenderTarget(null);
 
           scene.overrideMaterial =
             mode === "segmentBakedNormalMapView" ||
-            mode === "segmentBakedNormalMapApplied"
+              mode === "segmentBakedNormalMapApplied"
               ? normalMaterial
               : worldNormalMaterial;
           renderer.setRenderTarget(segmentNormalTarget);
+          if (mode === "segmentIndentedAppliedFinalPointLights") {
+            pointLightA.visible = true;
+            pointLightB.visible = true;
+            pointLightC.visible = true;
+          }
           renderer.render(scene, camera);
+          if (mode === "segmentIndentedAppliedFinalPointLights") {
+            pointLightA.visible = finalMarkerVisible;
+            pointLightB.visible = finalMarkerBVisible;
+            pointLightC.visible = finalMarkerCVisible;
+          }
           renderer.setRenderTarget(null);
 
           scene.overrideMaterial =
             mode === "segmentBakedNormalMapView" ||
-            mode === "segmentBakedNormalMapApplied"
+              mode === "segmentBakedNormalMapApplied"
               ? viewTangentMaterial
               : worldTangentMaterial;
           renderer.setRenderTarget(segmentTangentTarget);
+          if (mode === "segmentIndentedAppliedFinalPointLights") {
+            pointLightA.visible = true;
+            pointLightB.visible = true;
+            pointLightC.visible = true;
+          }
           renderer.render(scene, camera);
+          if (mode === "segmentIndentedAppliedFinalPointLights") {
+            pointLightA.visible = finalMarkerVisible;
+            pointLightB.visible = finalMarkerBVisible;
+            pointLightC.visible = finalMarkerCVisible;
+          }
           renderer.setRenderTarget(null);
 
           scene.overrideMaterial = null;
@@ -5651,6 +5926,8 @@ export default function PixelArtBufferViews({
             mode === "segmentIndentedApplied" ||
             mode === "segmentIndentedAppliedOrbit" ||
             mode === "segmentIndentedAppliedPointLights" ||
+            mode === "segmentIndentedAppliedFinal" ||
+            mode === "segmentIndentedAppliedFinalPointLights" ||
             mode === "segmentBakedNormalMapView" ||
             mode === "segmentBakedNormalMapApplied"
           ) {
@@ -5662,14 +5939,19 @@ export default function PixelArtBufferViews({
 
             if (!standaloneSegmentParticipationTarget) return;
             const participationUsesPointLightMarkers =
-              mode === "segmentIndentedAppliedPointLights";
+              mode === "segmentIndentedAppliedPointLights" ||
+              mode === "segmentIndentedAppliedFinalPointLights";
             const pointLightAVisible = pointLightA.visible;
             const pointLightBVisible = pointLightB.visible;
             const pointLightCVisible = pointLightC.visible;
             if (participationUsesPointLightMarkers) {
               pointLightA.visible = true;
-              pointLightB.visible = true;
-              pointLightC.visible = true;
+              pointLightB.visible =
+                mode === "segmentIndentedAppliedPointLights" ||
+                mode === "segmentIndentedAppliedFinalPointLights";
+              pointLightC.visible =
+                mode === "segmentIndentedAppliedPointLights" ||
+                mode === "segmentIndentedAppliedFinalPointLights";
             }
             scene.overrideMaterial = occlusionDepthMaterial;
             renderer.setRenderTarget(standaloneSegmentParticipationTarget);
@@ -5697,7 +5979,10 @@ export default function PixelArtBufferViews({
             renderSegmentBakedNormalMap(renderer, camera);
             renderer.setRenderTarget(null);
 
-            if (mode === "segmentIndentedAppliedPointLights") {
+            if (
+              mode === "segmentIndentedAppliedPointLights" ||
+              mode === "segmentIndentedAppliedFinalPointLights"
+            ) {
               if (!standaloneWorldPositionTarget) return;
               scene.overrideMaterial = worldPositionMaterial;
               renderer.setRenderTarget(standaloneWorldPositionTarget);
@@ -5714,12 +5999,15 @@ export default function PixelArtBufferViews({
               mode === "segmentIndented"
                 ? segmentFieldDisplayMaterial
                 : mode === "segmentIndentedLit"
-                  ? segmentIndentedLitMaterial
-                  : mode === "segmentIndentedApplied" ||
-                      mode === "segmentIndentedAppliedOrbit"
-                    ? segmentIndentedAppliedMaterial
-                    : mode === "segmentIndentedAppliedPointLights"
+                ? segmentIndentedLitMaterial
+                : mode === "segmentIndentedApplied" ||
+                    mode === "segmentIndentedAppliedOrbit"
+                  ? segmentIndentedAppliedMaterial
+                    : mode === "segmentIndentedAppliedPointLights" ||
+                        mode === "segmentIndentedAppliedFinalPointLights"
                       ? segmentIndentedAppliedPointLightsMaterial
+                      : mode === "segmentIndentedAppliedFinal"
+                        ? segmentIndentedAppliedMaterial
                       : mode === "segmentBakedNormalMapView"
                         ? segmentBakedNormalMapViewMaterial
                         : mode === "segmentBakedNormalMapApplied"
@@ -5779,7 +6067,9 @@ export default function PixelArtBufferViews({
                 mode === "segmentIndentedLit" ||
                 mode === "segmentIndentedApplied" ||
                 mode === "segmentIndentedAppliedOrbit" ||
-                mode === "segmentIndentedAppliedPointLights"
+                mode === "segmentIndentedAppliedPointLights" ||
+                mode === "segmentIndentedAppliedFinal" ||
+                mode === "segmentIndentedAppliedFinalPointLights"
                   ? insetControlsRef.current.directionStrength *
                     SHARED_INDENT_TO_BEVEL_SCALE
                   : insetControlsRef.current.bevelStrength;
@@ -5819,12 +6109,108 @@ export default function PixelArtBufferViews({
               indentedMaterial.uniforms.pointLightA.value.copy(
                 pointLightA.position,
               );
-              indentedMaterial.uniforms.pointLightB.value.copy(
-                pointLightB.position,
+              if (mode === "segmentIndentedAppliedFinal") {
+                indentedMaterial.uniforms.pointLightB.value.set(
+                  9999,
+                  9999,
+                  9999,
+                );
+                indentedMaterial.uniforms.pointLightC.value.set(
+                  9999,
+                  9999,
+                  9999,
+                );
+              } else {
+                indentedMaterial.uniforms.pointLightB.value.copy(
+                  pointLightB.position,
+                );
+                indentedMaterial.uniforms.pointLightC.value.copy(
+                  pointLightC.position,
+                );
+              }
+            }
+
+            if (
+              mode === "segmentIndentedAppliedFinal" ||
+              mode === "segmentIndentedAppliedFinalPointLights"
+            ) {
+              if (!standaloneNormalTarget) return;
+
+              scene.overrideMaterial = normalMaterial;
+              renderer.setRenderTarget(standaloneNormalTarget);
+              renderer.render(scene, camera);
+              renderer.setRenderTarget(null);
+              scene.overrideMaterial = null;
+
+              if (!standaloneLightTarget) return;
+
+              renderer.setRenderTarget(outputTarget);
+              renderer.render(postScene, postCamera);
+              renderer.setRenderTarget(null);
+
+              const ambientVisible = ambient.visible;
+              const keyLightVisible = keyLight.visible;
+              const pointLightAVisible = pointLightA.visible;
+              const pointLightBVisible = pointLightB.visible;
+              const pointLightCVisible = pointLightC.visible;
+              scene.overrideMaterial = lightMaskMaterial;
+              ambient.visible = false;
+              keyLight.visible = mode === "segmentIndentedAppliedFinal";
+              pointLightA.visible =
+                mode === "segmentIndentedAppliedFinalPointLights";
+              pointLightB.visible =
+                mode === "segmentIndentedAppliedFinalPointLights";
+              pointLightC.visible =
+                mode === "segmentIndentedAppliedFinalPointLights";
+              renderer.setRenderTarget(standaloneLightTarget);
+              renderer.render(scene, camera);
+              renderer.setRenderTarget(null);
+              ambient.visible = ambientVisible;
+              keyLight.visible = keyLightVisible;
+              pointLightA.visible = pointLightAVisible;
+              pointLightB.visible = pointLightBVisible;
+              pointLightC.visible = pointLightCVisible;
+              scene.overrideMaterial = null;
+
+              postQuad.material = augmentedBlendMaterial;
+              augmentedBlendMaterial.uniforms.tColor.value = outputTarget.texture;
+              augmentedBlendMaterial.uniforms.tDepth.value = target.depthTexture;
+              augmentedBlendMaterial.uniforms.tNormals.value =
+                standaloneNormalTarget.texture;
+              augmentedBlendMaterial.uniforms.tObjectIds.value =
+                segmentObjectIdTarget.texture;
+              augmentedBlendMaterial.uniforms.tLight.value =
+                standaloneLightTarget.texture;
+              augmentedBlendMaterial.uniforms.inputIsSRGB.value = 1;
+              augmentedBlendMaterial.uniforms.maskLightMarkersByColor.value =
+                mode === "segmentIndentedAppliedFinalPointLights" ? 1 : 0;
+              augmentedBlendMaterial.uniforms.objectIdOutlineStrength.value =
+                OBJECT_ID_OUTLINE_STRENGTH;
+              augmentedBlendMaterial.uniforms.internalDepthOutlineStrength.value =
+                INTERNAL_DEPTH_OUTLINE_STRENGTH;
+              augmentedBlendMaterial.uniforms.normalOutlineStrength.value =
+                NORMAL_OUTLINE_STRENGTH;
+              augmentedBlendMaterial.uniforms.texelSize.value.set(
+                1 / target.width,
+                1 / target.height,
               );
-              indentedMaterial.uniforms.pointLightC.value.copy(
-                pointLightC.position,
+
+              renderer.setRenderTarget(standaloneColorTarget);
+              renderer.render(postScene, postCamera);
+              renderer.setRenderTarget(null);
+
+              upscaleMaterial.uniforms.tInput.value = standaloneColorTarget.texture;
+              upscaleMaterial.uniforms.textureSize.value.set(
+                standaloneColorTarget.width,
+                standaloneColorTarget.height,
               );
+              upscaleMaterial.uniforms.encodeSrgb.value = 0;
+              renderer.setRenderTarget(outputTarget);
+              renderer.render(upscaleScene, postCamera);
+              renderer.setRenderTarget(null);
+
+              presentUpscaled(renderer, outputTarget, false);
+              return;
             }
           }
         } else {
@@ -5952,6 +6338,70 @@ export default function PixelArtBufferViews({
             ),
           );
         }
+      }
+
+      if (activeModes.includes("segmentIndentedAppliedFinal")) {
+        const azimuth = keyLightBaseAngle + elapsed * 0.35;
+        keyLight.position.set(
+          Math.sin(azimuth) * keyLightRadius,
+          keyLightHeight,
+          Math.cos(azimuth) * keyLightRadius,
+        );
+        pointLightB.position.set(9999, 9999, 9999);
+        pointLightC.position.set(9999, 9999, 9999);
+        pointLightA.position.set(9999, 9999, 9999);
+        cameras.get("segmentIndentedAppliedFinal")?.lookAt(target);
+      }
+
+      if (activeModes.includes("segmentIndentedAppliedFinalPointLights")) {
+        pointLightA.position.set(
+          Math.sin(elapsed * 0.9) * 2.35,
+          2.15 + Math.sin(elapsed * 1.1) * 0.45,
+          Math.cos(elapsed * 1.1) * 2.35,
+        );
+        pointLightB.position.set(
+          Math.sin(elapsed * 1.2 + 1.6) * 2.55,
+          2.55 + Math.cos(elapsed * 0.9 + 0.8) * 0.5,
+          Math.cos(elapsed * 0.85 + 0.9) * 2.55,
+        );
+        pointLightC.position.set(
+          Math.sin(elapsed * 0.75 + 3.1) * 2.2,
+          1.95 + Math.sin(elapsed * 1.35 + 0.5) * 0.4,
+          Math.cos(elapsed * 1.35 + 2.4) * 2.2,
+        );
+        const pointLightCamera = cameras.get(
+          "segmentIndentedAppliedFinalPointLights",
+        );
+        const pointLightDisplayTarget = resizeEntries.get(
+          "segmentIndentedAppliedFinalPointLights",
+        )?.displayTarget;
+        if (pointLightCamera && pointLightDisplayTarget) {
+          pointLightA.position.copy(
+            snapPositionToCameraTexels(
+              pointLightA.position,
+              pointLightCamera,
+              pointLightDisplayTarget.width,
+              pointLightDisplayTarget.height,
+            ),
+          );
+          pointLightB.position.copy(
+            snapPositionToCameraTexels(
+              pointLightB.position,
+              pointLightCamera,
+              pointLightDisplayTarget.width,
+              pointLightDisplayTarget.height,
+            ),
+          );
+          pointLightC.position.copy(
+            snapPositionToCameraTexels(
+              pointLightC.position,
+              pointLightCamera,
+              pointLightDisplayTarget.width,
+              pointLightDisplayTarget.height,
+            ),
+          );
+        }
+        cameras.get("segmentIndentedAppliedFinalPointLights")?.lookAt(target);
       }
 
       if (activeModes.includes("segmentIndentedOrbit")) {
@@ -6341,6 +6791,20 @@ export default function PixelArtBufferViews({
       {mode === "segmentIndentedAppliedPointLightsOnly" && (
         <div
           ref={segmentIndentedAppliedPointLightsRef}
+          className="pixel-buffer-demo__viewport pixel-buffer-demo__viewport--solo"
+        />
+      )}
+
+      {mode === "segmentIndentedAppliedFinalOnly" && (
+        <div
+          ref={segmentIndentedAppliedFinalRef}
+          className="pixel-buffer-demo__viewport pixel-buffer-demo__viewport--solo"
+        />
+      )}
+
+      {mode === "segmentIndentedAppliedFinalPointLightsOnly" && (
+        <div
+          ref={segmentIndentedAppliedFinalPointLightsRef}
           className="pixel-buffer-demo__viewport pixel-buffer-demo__viewport--solo"
         />
       )}

@@ -12,7 +12,14 @@ const blog = defineCollection({
     readTime: z.string(),
     category: z.string(),
     featured: z.boolean().default(false),
-    accent: z.string().default("teal")
+    accent: z.string().default("teal"),
+    thumbnail: z
+      .object({
+        src: z.string(),
+        alt: z.string()
+      })
+      .optional(),
+    tags: z.array(z.string()).optional()
   })
 });
 

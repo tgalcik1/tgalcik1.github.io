@@ -1,0 +1,14 @@
+---
+import PixelArtBufferViews from "./PixelArtBufferViews";
+import ArticleIndentedSegmentDemo from "./ArticleIndentedSegmentDemo.astro";
+---
+
+<ArticleIndentedSegmentDemo
+  title="Everything Together, Point Lights"
+  subtitle="fixed camera, three moving point lights"
+>
+  <PixelArtBufferViews
+    mode="segmentIndentedAppliedFinalPointLightsOnly"
+    client:visible
+  />
+</ArticleIndentedSegmentDemo>

@@ -107,6 +107,8 @@ const posts = (await getCollection("blog"))
             title={post.data.title}
             description={post.data.description}
             publishedAt={post.data.publishedAt}
+            thumbnail={post.data.thumbnail}
+            variant="background"
           />
         ))}
       </div>
@@ -449,7 +451,10 @@ const posts = (await getCollection("blog"))
   }
 
   .writing-grid {
-    padding: 1px;
+    padding: 0;
+    gap: 1rem;
+    background: transparent;
+    border: 0;
   }
 
   @media (max-width: 900px) {
