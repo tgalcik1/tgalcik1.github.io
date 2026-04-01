@@ -1,0 +1,227 @@
+---
+import PixelArtBufferViews from "./PixelArtBufferViews";
+import ArticleIndentedSegmentDemo from "./ArticleIndentedSegmentDemo.astro";
+
+const segmentOptions = [
+  { id: "grid", label: "Grid" },
+  { id: "brick", label: "Brick" },
+  { id: "basket", label: "Basket" },
+  { id: "voronoi", label: "Voronoi" },
+];
+---
+
+<ArticleIndentedSegmentDemo title="Cell Direction Fields" subtitle="texture preview">
+  <div class="segment-field-texture" data-segment-field-texture>
+    <div class="segment-field-texture__controls">
+      <label class="segment-field-texture__control">
+        <span>Segment Map</span>
+        <select data-role="segment-map">
+          {
+            segmentOptions.map((option) => (
+              <option value={option.id}>{option.label}</option>
+            ))
+          }
+        </select>
+      </label>
+
+      <label class="segment-field-texture__control">
+        <span>Field Blend</span>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          value="0.5"
+          data-role="field-blend"
+        />
+      </label>
+
+      <div class="segment-field-texture__legend" aria-hidden="true">
+        <span>Smooth</span>
+        <span>Quantized</span>
+      </div>
+    </div>
+
+    <div class="segment-field-texture__preview">
+      <PixelArtBufferViews mode="segmentFieldTextureOnly" client:visible />
+    </div>
+  </div>
+</ArticleIndentedSegmentDemo>
+
+<script is:inline>
+  (() => {
+    const SEGMENT_TEXTURE_STORAGE_KEY = "pixel-art-segment-texture";
+    const SEGMENT_TEXTURE_EVENT = "pixel-art-segment-texture-change";
+    const INSET_CONTROLS_STORAGE_KEY = "pixel-art-inset-controls-v2";
+    const INSET_CONTROLS_EVENT = "pixel-art-inset-controls-change";
+    const DEFAULT_SEGMENT_TEXTURE = "grid";
+    const DEFAULT_FIELD_BLEND = 0.5;
+
+    const applyState = (root) => {
+      const textureSelect = root.querySelector('[data-role="segment-map"]');
+      const blendInput = root.querySelector('[data-role="field-blend"]');
+      if (!(textureSelect instanceof HTMLSelectElement)) return;
+      if (!(blendInput instanceof HTMLInputElement)) return;
+
+      const storedTexture =
+        window.localStorage.getItem(SEGMENT_TEXTURE_STORAGE_KEY) ??
+        DEFAULT_SEGMENT_TEXTURE;
+      textureSelect.value = storedTexture;
+
+      let storedFieldBlend = DEFAULT_FIELD_BLEND;
+      const storedControls = window.localStorage.getItem(
+        INSET_CONTROLS_STORAGE_KEY,
+      );
+      if (storedControls) {
+        try {
+          const parsed = JSON.parse(storedControls);
+          if (typeof parsed.fieldBlend === "number") {
+            storedFieldBlend = parsed.fieldBlend;
+          }
+        } catch {}
+      }
+
+      blendInput.value = String(1 - storedFieldBlend);
+    };
+
+    const roots = document.querySelectorAll("[data-segment-field-texture]");
+    roots.forEach((root) => {
+      const textureSelect = root.querySelector('[data-role="segment-map"]');
+      const blendInput = root.querySelector('[data-role="field-blend"]');
+      if (!(textureSelect instanceof HTMLSelectElement)) return;
+      if (!(blendInput instanceof HTMLInputElement)) return;
+
+      const updateTexture = (nextId) => {
+        window.localStorage.setItem(SEGMENT_TEXTURE_STORAGE_KEY, nextId);
+        window.dispatchEvent(
+          new CustomEvent(SEGMENT_TEXTURE_EVENT, {
+            detail: nextId,
+          }),
+        );
+      };
+
+      const updateFieldBlend = (uiValue) => {
+        let current = {};
+        const storedControls = window.localStorage.getItem(
+          INSET_CONTROLS_STORAGE_KEY,
+        );
+        if (storedControls) {
+          try {
+            current = JSON.parse(storedControls);
+          } catch {}
+        }
+
+        const next = {
+          ...current,
+          fieldMode: "blend",
+          fieldBlend: 1 - uiValue,
+        };
+
+        window.localStorage.setItem(
+          INSET_CONTROLS_STORAGE_KEY,
+          JSON.stringify(next),
+        );
+        window.dispatchEvent(
+          new CustomEvent(INSET_CONTROLS_EVENT, {
+            detail: next,
+          }),
+        );
+      };
+
+      applyState(root);
+
+      textureSelect.addEventListener("change", (event) => {
+        updateTexture(event.currentTarget.value);
+      });
+
+      blendInput.addEventListener("input", (event) => {
+        updateFieldBlend(Number(event.currentTarget.value));
+      });
+
+      window.addEventListener(SEGMENT_TEXTURE_EVENT, () => applyState(root));
+      window.addEventListener(INSET_CONTROLS_EVENT, () => applyState(root));
+      window.addEventListener("storage", () => applyState(root));
+    });
+  })();
+</script>
+
+<style>
+  .segment-field-texture {
+    display: grid;
+    grid-template-columns: minmax(0, 16rem) minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: stretch;
+    padding: 1rem;
+  }
+
+  .segment-field-texture__controls {
+    display: grid;
+    align-content: start;
+    gap: 1rem;
+  }
+
+  .segment-field-texture__control {
+    display: grid;
+    gap: 0.55rem;
+    color: var(--text-muted);
+    font-size: 0.66rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .segment-field-texture__control input[type="range"] {
+    width: 100%;
+    margin: 0;
+    accent-color: var(--accent);
+  }
+
+  .segment-field-texture__control select {
+    width: 100%;
+    color-scheme: dark;
+    appearance: none;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
+    color: var(--text);
+    font: inherit;
+    font-family: "DM Mono", monospace;
+    line-height: 1.2;
+    letter-spacing: 0.05em;
+  }
+
+  .segment-field-texture__legend {
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-muted);
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .segment-field-texture__preview {
+    justify-self: end;
+    width: min(100%, 18rem);
+    aspect-ratio: 1 / 1;
+  }
+
+  .segment-field-texture__preview :global(.pixel-buffer-demo) {
+    height: 100%;
+  }
+
+  .segment-field-texture__preview :global(.pixel-buffer-demo__viewport),
+  .segment-field-texture__preview :global(.pixel-buffer-demo__viewport--solo) {
+    height: 100%;
+    aspect-ratio: 1 / 1;
+  }
+
+  @media (max-width: 700px) {
+    .segment-field-texture {
+      grid-template-columns: 1fr;
+    }
+
+    .segment-field-texture__preview {
+      justify-self: start;
+      width: min(100%, 18rem);
+    }
+  }
+</style>

@@ -1,58 +1,26 @@
 ---
-import ArticleIndentedSegmentBoundaries from "./ArticleIndentedSegmentBoundaries.astro";
-import ArticleIndentedSegmentBoundariesOrbit from "./ArticleIndentedSegmentBoundariesOrbit.astro";
-import ArticleInsetWorldNormals from "./ArticleInsetWorldNormals.astro";
-import ArticleInsetNdotLLighting from "./ArticleInsetNdotLLighting.astro";
-import ArticleAppliedInsetShading from "./ArticleAppliedInsetShading.astro";
-import ArticleAppliedInsetShadingOrbit from "./ArticleAppliedInsetShadingOrbit.astro";
-import ArticleAppliedInsetShadingPointLights from "./ArticleAppliedInsetShadingPointLights.astro";
+interface Props {
+  title: string;
+  subtitle: string;
+}
+
+const { title, subtitle } = Astro.props;
 ---
 
-<ArticleIndentedSegmentBoundaries />
-<ArticleIndentedSegmentBoundariesOrbit />
-<ArticleInsetWorldNormals />
-<ArticleInsetNdotLLighting />
-<ArticleAppliedInsetShading />
-
-{/* <div class="pixel-buffer-article">
+<div class="pixel-buffer-article">
   <div class="pixel-buffer-article__header">
     <div class="pixel-buffer-article__dots" aria-hidden="true">
       <span></span>
       <span></span>
       <span></span>
     </div>
-    <span>Applied Inset Shading, Baked Normal Map</span>
-    <span>offline bake</span>
+    <span>{title}</span>
+    <span>{subtitle}</span>
   </div>
   <div class="pixel-buffer-article__body">
-    <PixelArtBufferViews mode="segmentBakedNormalMapAppliedOnly" client:visible />
+    <slot />
   </div>
-</div> */}
-
-<ArticleAppliedInsetShadingOrbit />
-<ArticleAppliedInsetShadingPointLights />
-
-{/* <div class="pixel-buffer-article">
-  <div class="pixel-buffer-article__header">
-    <div class="pixel-buffer-article__dots" aria-hidden="true">
-      <span></span>
-      <span></span>
-      <span></span>
-    </div>
-    <span>Baked Inset Normal Map</span>
-    <span>offline preview</span>
-  </div>
-  <div class="pixel-buffer-article__body pixel-buffer-article__body--pair">
-    <div class="pixel-buffer-article__subpanel pixel-buffer-article__subpanel--square">
-      <div class="pixel-buffer-article__subheader">Baked Texture</div>
-      <PixelArtBufferViews mode="segmentBakedNormalMapTextureOnly" showSegmentTexturePicker={true} client:visible />
-    </div>
-    <div class="pixel-buffer-article__subpanel">
-      <div class="pixel-buffer-article__subheader">Inset View-Space Normals</div>
-      <PixelArtBufferViews mode="segmentBakedNormalMapViewOnly" client:visible />
-    </div>
-  </div>
-</div> */}
+</div>
 
 <style>
   .pixel-buffer-article {
@@ -101,24 +69,6 @@ import ArticleAppliedInsetShadingPointLights from "./ArticleAppliedInsetShadingP
     padding: 0;
   }
 
-  .pixel-buffer-article__body--pair {
-    display: grid;
-    grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
-  }
-
-  .pixel-buffer-article__subpanel + .pixel-buffer-article__subpanel {
-    border-left: 1px solid var(--border);
-  }
-
-  .pixel-buffer-article__subheader {
-    padding: 0.65rem 1rem;
-    border-bottom: 1px solid var(--border);
-    color: var(--text-muted);
-    font-size: 0.62rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
-
   .pixel-buffer-article__body :global(.pixel-buffer-demo) {
     display: grid;
   }
@@ -133,6 +83,11 @@ import ArticleAppliedInsetShadingPointLights from "./ArticleAppliedInsetShadingP
   .pixel-buffer-article__body :global(.pixel-buffer-demo__control-row) {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .pixel-buffer-article__body :global(.pixel-buffer-demo__control-row:last-child) {
+    border-bottom: 0;
   }
 
   .pixel-buffer-article__body :global(.pixel-buffer-demo__control) {
@@ -168,26 +123,26 @@ import ArticleAppliedInsetShadingPointLights from "./ArticleAppliedInsetShadingP
     font-family: "DM Mono", monospace;
     line-height: 1.2;
     letter-spacing: 0.05em;
-    text-align: center;
-    text-align-last: center;
-    text-transform: none;
-  }
-
-  .pixel-buffer-article__body :global(.pixel-buffer-demo__control select option) {
-    background: #11161d;
-    color: #f3e7d8;
   }
 
   .pixel-buffer-article__body :global(.pixel-buffer-demo__reset) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 3.25rem;
+    width: 3rem;
     border: 0;
     border-left: 1px solid var(--border);
     background: transparent;
     color: var(--text-muted);
     cursor: pointer;
+    transition:
+      color 0.2s ease,
+      background 0.2s ease;
+  }
+
+  .pixel-buffer-article__body :global(.pixel-buffer-demo__reset:hover) {
+    background: var(--panel-bg);
+    color: var(--text);
   }
 
   .pixel-buffer-article__body :global(.pixel-buffer-demo__reset svg) {
@@ -198,11 +153,6 @@ import ArticleAppliedInsetShadingPointLights from "./ArticleAppliedInsetShadingP
   .pixel-buffer-article__body :global(.pixel-buffer-demo__viewport) {
     height: 15rem;
     background: #0b0f15;
-  }
-
-  .pixel-buffer-article__subpanel--square :global(.pixel-buffer-demo__viewport) {
-    height: 15rem;
-    aspect-ratio: 1;
   }
 
   .pixel-buffer-article__body :global(.pixel-buffer-demo__viewport--solo) {

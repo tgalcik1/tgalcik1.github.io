@@ -7,6 +7,8 @@ type ViewMode =
   | "depth"
   | "normals"
   | "segments"
+  | "segmentFieldTexture"
+  | "segmentInsetMask"
   | "segmentCenterField"
   | "segmentCellBevel"
   | "segmentEdges"
@@ -35,6 +37,8 @@ interface Props {
     | "depthEdgesOnly"
     | "normalEdgesOnly"
     | "segmentOnly"
+    | "segmentFieldTextureOnly"
+    | "segmentInsetMaskOnly"
     | "segmentCenterFieldOnly"
     | "segmentCellBevelOnly"
     | "segmentEdgesOnly"
@@ -59,6 +63,8 @@ const FULL_VIEW_MODES: ViewMode[] = ["color", "depth", "normals"];
 const DEPTH_EDGE_VIEW_MODES: ViewMode[] = ["depthEdges"];
 const NORMAL_EDGE_VIEW_MODES: ViewMode[] = ["normalEdges"];
 const SEGMENT_VIEW_MODES: ViewMode[] = ["segments"];
+const SEGMENT_FIELD_TEXTURE_VIEW_MODES: ViewMode[] = ["segmentFieldTexture"];
+const SEGMENT_INSET_MASK_VIEW_MODES: ViewMode[] = ["segmentInsetMask"];
 const SEGMENT_CENTER_FIELD_VIEW_MODES: ViewMode[] = ["segmentCenterField"];
 const SEGMENT_CELL_BEVEL_VIEW_MODES: ViewMode[] = ["segmentCellBevel"];
 const SEGMENT_EDGE_VIEW_MODES: ViewMode[] = ["segmentEdges"];
@@ -123,6 +129,8 @@ const AUGMENTED_BLEND_VIEW_MODES: ViewMode[] = ["augmentedBlend"];
 const BLEND_VIEW_MODES: ViewMode[] = ["blend"];
 const SEGMENT_TEXTURE_STORAGE_KEY = "pixel-art-segment-texture";
 const SEGMENT_TEXTURE_EVENT = "pixel-art-segment-texture-change";
+const SEGMENT_FIELD_TEXTURE_READY_EVENT =
+  "pixel-art-segment-field-texture-ready";
 const INSET_CONTROLS_STORAGE_KEY = "pixel-art-inset-controls-v2";
 const INSET_CONTROLS_EVENT = "pixel-art-inset-controls-change";
 const generatedSegmentFieldCache = new Map<string, THREE.DataTexture>();
@@ -150,6 +158,7 @@ const INSET_BASE_NORMAL_WEIGHT = 0;
 const INSET_LIT_THRESHOLD = 0.5;
 const INSET_LIT_FALLOFF = 0.5;
 const INSET_BEVEL_STRENGTH = 1;
+const SHARED_INDENT_TO_BEVEL_SCALE = 2;
 const INSET_DARKEN_STRENGTH = 0.5;
 const INSET_FIELD_MODE = "blend";
 const INSET_FIELD_BLEND = 0.5;
@@ -186,21 +195,19 @@ export default function PixelArtBufferViews({
   const [insetLitThreshold, setInsetLitThreshold] =
     useState(INSET_LIT_THRESHOLD);
   const [insetLitFalloff, setInsetLitFalloff] = useState(INSET_LIT_FALLOFF);
-  const [insetBevelStrength, setInsetBevelStrength] = useState(
-    INSET_BEVEL_STRENGTH,
-  );
+  const [insetBevelStrength, setInsetBevelStrength] =
+    useState(INSET_BEVEL_STRENGTH);
   const [insetDarkenStrength, setInsetDarkenStrength] = useState(
     INSET_DARKEN_STRENGTH,
   );
-  const [insetFieldMode, setInsetFieldMode] = useState<
-    "quantized" | "smooth" | "blend"
-  >(INSET_FIELD_MODE);
+  const insetFieldMode = "blend" as const;
   const [insetFieldBlend, setInsetFieldBlend] = useState(INSET_FIELD_BLEND);
   const [bakedNormalMapBlend, setBakedNormalMapBlend] = useState(
     BAKED_NORMAL_MAP_BLEND,
   );
   const [bakedNormalMapInsetStrength, setBakedNormalMapInsetStrength] =
     useState(BAKED_NORMAL_MAP_INSET_STRENGTH);
+  const [segmentFieldRevision, setSegmentFieldRevision] = useState(0);
   const [isRendererActive, setIsRendererActive] = useState(false);
   const insetControlsRef = useRef({
     fieldUnderlay: segmentFieldUnderlay,
@@ -233,6 +240,8 @@ export default function PixelArtBufferViews({
   const depthRef = useRef<HTMLDivElement>(null);
   const normalsRef = useRef<HTMLDivElement>(null);
   const segmentRef = useRef<HTMLDivElement>(null);
+  const segmentFieldTextureRef = useRef<HTMLDivElement>(null);
+  const segmentInsetMaskRef = useRef<HTMLDivElement>(null);
   const segmentCenterFieldRef = useRef<HTMLDivElement>(null);
   const segmentCellBevelRef = useRef<HTMLDivElement>(null);
   const segmentEdgesRef = useRef<HTMLDivElement>(null);
@@ -262,6 +271,8 @@ export default function PixelArtBufferViews({
     SEGMENT_TEXTURE_OPTIONS[0];
   const usesSegmentTexture =
     mode === "segmentOnly" ||
+    mode === "segmentFieldTextureOnly" ||
+    mode === "segmentInsetMaskOnly" ||
     mode === "segmentCenterFieldOnly" ||
     mode === "segmentCellBevelOnly" ||
     mode === "segmentEdgesOnly" ||
@@ -280,6 +291,7 @@ export default function PixelArtBufferViews({
     ? selectedSegmentTexture.id
     : "no-segment-texture";
   const usesSegmentField =
+    mode === "segmentFieldTextureOnly" ||
     mode === "segmentIndentedOnly" ||
     mode === "segmentIndentedOrbitOnly" ||
     mode === "segmentIndentedNormalOnly" ||
@@ -291,7 +303,7 @@ export default function PixelArtBufferViews({
     mode === "segmentBakedNormalMapViewOnly" ||
     mode === "segmentBakedNormalMapAppliedOnly";
   const segmentFieldDependency = usesSegmentField
-    ? insetFieldMode
+    ? "blend"
     : "no-segment-field";
 
   useEffect(() => {
@@ -340,6 +352,26 @@ export default function PixelArtBufferViews({
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    const syncFieldTextures = () => {
+      setSegmentFieldRevision((value) => value + 1);
+    };
+
+    window.addEventListener(
+      SEGMENT_FIELD_TEXTURE_READY_EVENT,
+      syncFieldTextures,
+    );
+
+    return () => {
+      window.removeEventListener(
+        SEGMENT_FIELD_TEXTURE_READY_EVENT,
+        syncFieldTextures,
+      );
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
     const applyControls = (next: Partial<typeof insetControlsRef.current>) => {
       if (typeof next.fieldUnderlay === "number") {
         setSegmentFieldUnderlay(next.fieldUnderlay);
@@ -358,13 +390,6 @@ export default function PixelArtBufferViews({
       }
       if (typeof next.darkenStrength === "number") {
         setInsetDarkenStrength(next.darkenStrength);
-      }
-      if (
-        next.fieldMode === "quantized" ||
-        next.fieldMode === "smooth" ||
-        next.fieldMode === "blend"
-      ) {
-        setInsetFieldMode(next.fieldMode);
       }
       if (typeof next.fieldBlend === "number") {
         setInsetFieldBlend(next.fieldBlend);
@@ -477,49 +502,58 @@ export default function PixelArtBufferViews({
           ? NORMAL_EDGE_VIEW_MODES
           : mode === "segmentOnly"
             ? SEGMENT_VIEW_MODES
-            : mode === "segmentCenterFieldOnly"
-              ? SEGMENT_CENTER_FIELD_VIEW_MODES
-              : mode === "segmentCellBevelOnly"
-                ? SEGMENT_CELL_BEVEL_VIEW_MODES
-                : mode === "segmentEdgesOnly"
-                  ? SEGMENT_EDGE_VIEW_MODES
-                  : mode === "segmentIndentedOnly"
-                    ? SEGMENT_INDENTED_VIEW_MODES
-                    : mode === "segmentIndentedOrbitOnly"
-                      ? SEGMENT_INDENTED_ORBIT_VIEW_MODES
-                      : mode === "segmentIndentedNormalOnly"
-                        ? SEGMENT_INDENTED_NORMAL_VIEW_MODES
-                        : mode === "segmentIndentedLitOnly"
-                          ? SEGMENT_INDENTED_LIT_VIEW_MODES
-                          : mode === "segmentIndentedAppliedOnly"
-                            ? SEGMENT_INDENTED_APPLIED_VIEW_MODES
-                  : mode === "segmentIndentedAppliedOrbitOnly"
-                    ? SEGMENT_INDENTED_APPLIED_ORBIT_VIEW_MODES
-                  : mode === "segmentIndentedAppliedPointLightsOnly"
-                    ? SEGMENT_INDENTED_APPLIED_POINT_LIGHTS_VIEW_MODES
-                  : mode === "segmentBakedNormalMapTextureOnly"
-                                ? SEGMENT_BAKED_NORMAL_MAP_TEXTURE_VIEW_MODES
-                                : mode === "segmentBakedNormalMapViewOnly"
-                                  ? SEGMENT_BAKED_NORMAL_MAP_VIEW_MODES
-                                  : mode === "segmentBakedNormalMapAppliedOnly"
-                                    ? SEGMENT_BAKED_NORMAL_MAP_APPLIED_VIEW_MODES
-                                    : mode === "combinedMaskOnly"
-                                      ? COMBINED_MASK_VIEW_MODES
-                                      : mode === "objectIdOnly"
-                                        ? OBJECT_ID_VIEW_MODES
-                                        : mode === "objectIdEdgesOnly"
-                                          ? OBJECT_ID_EDGE_VIEW_MODES
-                                          : mode === "augmentedBlendOnly"
-                                            ? AUGMENTED_BLEND_VIEW_MODES
-                                            : mode === "blendOnly"
-                                              ? BLEND_VIEW_MODES
-                                              : FULL_VIEW_MODES;
+            : mode === "segmentFieldTextureOnly"
+              ? SEGMENT_FIELD_TEXTURE_VIEW_MODES
+              : mode === "segmentInsetMaskOnly"
+                ? SEGMENT_INSET_MASK_VIEW_MODES
+                : mode === "segmentCenterFieldOnly"
+                  ? SEGMENT_CENTER_FIELD_VIEW_MODES
+                  : mode === "segmentCellBevelOnly"
+                    ? SEGMENT_CELL_BEVEL_VIEW_MODES
+                    : mode === "segmentEdgesOnly"
+                      ? SEGMENT_EDGE_VIEW_MODES
+                      : mode === "segmentIndentedOnly"
+                        ? SEGMENT_INDENTED_VIEW_MODES
+                        : mode === "segmentIndentedOrbitOnly"
+                          ? SEGMENT_INDENTED_ORBIT_VIEW_MODES
+                          : mode === "segmentIndentedNormalOnly"
+                            ? SEGMENT_INDENTED_NORMAL_VIEW_MODES
+                            : mode === "segmentIndentedLitOnly"
+                              ? SEGMENT_INDENTED_LIT_VIEW_MODES
+                              : mode === "segmentIndentedAppliedOnly"
+                                ? SEGMENT_INDENTED_APPLIED_VIEW_MODES
+                                : mode === "segmentIndentedAppliedOrbitOnly"
+                                  ? SEGMENT_INDENTED_APPLIED_ORBIT_VIEW_MODES
+                                  : mode ===
+                                      "segmentIndentedAppliedPointLightsOnly"
+                                    ? SEGMENT_INDENTED_APPLIED_POINT_LIGHTS_VIEW_MODES
+                                    : mode ===
+                                        "segmentBakedNormalMapTextureOnly"
+                                      ? SEGMENT_BAKED_NORMAL_MAP_TEXTURE_VIEW_MODES
+                                      : mode === "segmentBakedNormalMapViewOnly"
+                                        ? SEGMENT_BAKED_NORMAL_MAP_VIEW_MODES
+                                        : mode ===
+                                            "segmentBakedNormalMapAppliedOnly"
+                                          ? SEGMENT_BAKED_NORMAL_MAP_APPLIED_VIEW_MODES
+                                          : mode === "combinedMaskOnly"
+                                            ? COMBINED_MASK_VIEW_MODES
+                                            : mode === "objectIdOnly"
+                                              ? OBJECT_ID_VIEW_MODES
+                                              : mode === "objectIdEdgesOnly"
+                                                ? OBJECT_ID_EDGE_VIEW_MODES
+                                                : mode === "augmentedBlendOnly"
+                                                  ? AUGMENTED_BLEND_VIEW_MODES
+                                                  : mode === "blendOnly"
+                                                    ? BLEND_VIEW_MODES
+                                                    : FULL_VIEW_MODES;
 
     const mounts: Record<ViewMode, HTMLDivElement | null> = {
       color: colorRef.current,
       depth: depthRef.current,
       normals: normalsRef.current,
       segments: segmentRef.current,
+      segmentFieldTexture: segmentFieldTextureRef.current,
+      segmentInsetMask: segmentInsetMaskRef.current,
       segmentCenterField: segmentCenterFieldRef.current,
       segmentCellBevel: segmentCellBevelRef.current,
       segmentEdges: segmentEdgesRef.current,
@@ -594,6 +628,30 @@ export default function PixelArtBufferViews({
       texture.colorSpace = THREE.NoColorSpace;
       segmentScalarTextureCache.set(key, texture);
       return texture;
+    };
+    const invalidateRepeatedFieldTextures = (fieldPath: string) => {
+      const repeatedFieldPrefix = `${fieldPath}:`;
+      for (const [
+        cacheKey,
+        cachedTexture,
+      ] of repeatedSegmentFieldTextureCache) {
+        if (!cacheKey.startsWith(repeatedFieldPrefix)) continue;
+        cachedTexture.dispose();
+        repeatedSegmentFieldTextureCache.delete(cacheKey);
+      }
+      for (const [
+        cacheKey,
+        cachedTexture,
+      ] of repeatedSegmentCenterFieldTextureCache) {
+        if (!cacheKey.startsWith(repeatedFieldPrefix)) continue;
+        cachedTexture.dispose();
+        repeatedSegmentCenterFieldTextureCache.delete(cacheKey);
+      }
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent(SEGMENT_FIELD_TEXTURE_READY_EVENT),
+        );
+      }
     };
     const generatedSegmentFieldTexture = (
       path: string,
@@ -743,39 +801,6 @@ export default function PixelArtBufferViews({
           bx: number,
           by: number,
         ) => (ax - ox) * (by - oy) - (ay - oy) * (bx - ox);
-        const closestPointOnSegment = (
-          px: number,
-          py: number,
-          ax: number,
-          ay: number,
-          bx: number,
-          by: number,
-        ) => {
-          const dx = bx - ax;
-          const dy = by - ay;
-          const lengthSquared = dx * dx + dy * dy;
-          if (lengthSquared <= 1e-6) {
-            return {
-              x: ax,
-              y: ay,
-              distanceSquared: (px - ax) * (px - ax) + (py - ay) * (py - ay),
-            };
-          }
-          const t = THREE.MathUtils.clamp(
-            ((px - ax) * dx + (py - ay) * dy) / lengthSquared,
-            0,
-            1,
-          );
-          const qx = ax + dx * t;
-          const qy = ay + dy * t;
-          const ddx = px - qx;
-          const ddy = py - qy;
-          return {
-            x: qx,
-            y: qy,
-            distanceSquared: ddx * ddx + ddy * ddy,
-          };
-        };
         const buildConvexHull = (points: Array<{ x: number; y: number }>) => {
           if (points.length <= 1) return points.slice();
 
@@ -823,6 +848,57 @@ export default function PixelArtBufferViews({
           upper.pop();
           return lower.concat(upper);
         };
+        const computePolygonCentroid = (
+          points: Array<{ x: number; y: number }>,
+        ) => {
+          if (points.length === 0) {
+            return { x: 0, y: 0 };
+          }
+          if (points.length < 3) {
+            let sumX = 0;
+            let sumY = 0;
+            for (const point of points) {
+              sumX += point.x;
+              sumY += point.y;
+            }
+            return {
+              x: sumX / points.length,
+              y: sumY / points.length,
+            };
+          }
+
+          let signedArea = 0;
+          let centroidX = 0;
+          let centroidY = 0;
+
+          for (let i = 0; i < points.length; i += 1) {
+            const current = points[i];
+            const next = points[(i + 1) % points.length];
+            const crossValue = current.x * next.y - next.x * current.y;
+            signedArea += crossValue;
+            centroidX += (current.x + next.x) * crossValue;
+            centroidY += (current.y + next.y) * crossValue;
+          }
+
+          if (Math.abs(signedArea) <= 1e-6) {
+            let sumX = 0;
+            let sumY = 0;
+            for (const point of points) {
+              sumX += point.x;
+              sumY += point.y;
+            }
+            return {
+              x: sumX / points.length,
+              y: sumY / points.length,
+            };
+          }
+
+          const scale = 1 / (3 * signedArea);
+          return {
+            x: centroidX * scale,
+            y: centroidY * scale,
+          };
+        };
 
         const field = new Uint8Array(size * 4);
         for (let component = 0; component < nextComponent; component += 1) {
@@ -836,14 +912,27 @@ export default function PixelArtBufferViews({
           >();
 
           for (const pixelIndex of boundaryPixels) {
-            const point = {
-              x: unwrappedX[pixelIndex],
-              y: unwrappedY[pixelIndex],
-            };
-            uniqueBoundaryPoints.set(`${point.x},${point.y}`, point);
+            const centerX = unwrappedX[pixelIndex];
+            const centerY = unwrappedY[pixelIndex];
+            const corners = [
+              { x: centerX - 0.5, y: centerY - 0.5 },
+              { x: centerX + 0.5, y: centerY - 0.5 },
+              { x: centerX + 0.5, y: centerY + 0.5 },
+              { x: centerX - 0.5, y: centerY + 0.5 },
+            ];
+
+            for (const point of corners) {
+              uniqueBoundaryPoints.set(`${point.x},${point.y}`, point);
+            }
           }
 
           const hull = buildConvexHull([...uniqueBoundaryPoints.values()]);
+          const hullCentroid =
+            hull.length > 0
+              ? computePolygonCentroid(hull)
+              : { x: centerX, y: centerY };
+          const quantizedCenterX = hullCentroid.x;
+          const quantizedCenterY = hullCentroid.y;
           const edges: Array<{
             ax: number;
             ay: number;
@@ -867,7 +956,8 @@ export default function PixelArtBufferViews({
               const midpointX = (a.x + b.x) * 0.5;
               const midpointY = (a.y + b.y) * 0.5;
               const towardCenter =
-                (centerX - midpointX) * nx + (centerY - midpointY) * ny;
+                (quantizedCenterX - midpointX) * nx +
+                (quantizedCenterY - midpointY) * ny;
               if (towardCenter < 0) {
                 nx *= -1;
                 ny *= -1;
@@ -884,12 +974,51 @@ export default function PixelArtBufferViews({
             }
           }
 
-          const walls = edges;
+          const walls: Array<{
+            nx: number;
+            ny: number;
+            c: number;
+          }> = [];
+          const EDGE_CLUSTER_THRESHOLD = 0.995;
+
+          for (const edge of edges) {
+            const matchingWall = walls.find(
+              (wall) =>
+                wall.nx * edge.nx + wall.ny * edge.ny > EDGE_CLUSTER_THRESHOLD,
+            );
+
+            const edgeSupport =
+              (edge.ax * edge.nx +
+                edge.ay * edge.ny +
+                (edge.bx * edge.nx + edge.by * edge.ny)) *
+              0.5;
+
+            if (!matchingWall) {
+              walls.push({
+                nx: edge.nx,
+                ny: edge.ny,
+                c: edgeSupport,
+              });
+              continue;
+            }
+
+            const combinedNx = matchingWall.nx + edge.nx;
+            const combinedNy = matchingWall.ny + edge.ny;
+            const combinedLength = Math.hypot(combinedNx, combinedNy);
+            if (combinedLength > 1e-6) {
+              matchingWall.nx = combinedNx / combinedLength;
+              matchingWall.ny = combinedNy / combinedLength;
+            }
+            matchingWall.c = (matchingWall.c + edgeSupport) * 0.5;
+          }
 
           let maxDistance = 1e-6;
           const pixelDistances: number[] = new Array(
             pixelsInComponent.length,
           ).fill(0);
+          const pixelWallIndices: number[] = new Array(
+            pixelsInComponent.length,
+          ).fill(-1);
           const pixelDirections: Array<{ x: number; y: number }> = new Array(
             pixelsInComponent.length,
           );
@@ -920,42 +1049,50 @@ export default function PixelArtBufferViews({
             if (walls.length === 0) {
               pixelDirections[i] = { x: 0, y: 0 };
               pixelDistances[i] = 0;
+              pixelWallIndices[i] = -1;
               continue;
             }
 
+            const toCenterX = quantizedCenterX - px;
+            const toCenterY = quantizedCenterY - py;
+            const toCenterLength = Math.hypot(toCenterX, toCenterY);
+            const centerDirX =
+              toCenterLength > 1e-6 ? toCenterX / toCenterLength : 0;
+            const centerDirY =
+              toCenterLength > 1e-6 ? toCenterY / toCenterLength : 0;
+
             let bestWall = walls[0];
-            let bestClosestPoint = closestPointOnSegment(
-              px,
-              py,
-              bestWall.ax,
-              bestWall.ay,
-              bestWall.bx,
-              bestWall.by,
+            let bestAlignment =
+              centerDirX * bestWall.nx + centerDirY * bestWall.ny;
+            let bestDistance = Math.max(
+              0,
+              px * bestWall.nx + py * bestWall.ny - bestWall.c,
             );
-            let bestDistance = bestClosestPoint.distanceSquared;
 
             for (let wallIndex = 1; wallIndex < walls.length; wallIndex += 1) {
               const wall = walls[wallIndex];
-              const closestPoint = closestPointOnSegment(
-                px,
-                py,
-                wall.ax,
-                wall.ay,
-                wall.bx,
-                wall.by,
+              const wallAlignment = centerDirX * wall.nx + centerDirY * wall.ny;
+              const wallDistance = Math.max(
+                0,
+                px * wall.nx + py * wall.ny - wall.c,
               );
-              if (closestPoint.distanceSquared < bestDistance) {
-                bestDistance = closestPoint.distanceSquared;
+              if (
+                wallAlignment > bestAlignment + 1e-4 ||
+                (Math.abs(wallAlignment - bestAlignment) <= 1e-4 &&
+                  wallDistance < bestDistance)
+              ) {
                 bestWall = wall;
-                bestClosestPoint = closestPoint;
+                bestAlignment = wallAlignment;
+                bestDistance = wallDistance;
               }
             }
 
+            pixelWallIndices[i] = walls.indexOf(bestWall);
             pixelDirections[i] = {
               x: bestWall.nx,
               y: bestWall.ny,
             };
-            const distance = Math.sqrt(bestDistance);
+            const distance = bestDistance;
             pixelDistances[i] = distance;
             if (distance > maxDistance) {
               maxDistance = distance;
@@ -981,6 +1118,8 @@ export default function PixelArtBufferViews({
 
         texture.image = { data: field, width, height };
         texture.needsUpdate = true;
+        setSegmentFieldRevision((value) => value + 1);
+        invalidateRepeatedFieldTextures(path);
       });
 
       return texture;
@@ -1122,6 +1261,8 @@ export default function PixelArtBufferViews({
 
         texture.image = { data: field, width, height };
         texture.needsUpdate = true;
+        setSegmentFieldRevision((value) => value + 1);
+        invalidateRepeatedFieldTextures(path);
       });
 
       return texture;
@@ -1268,6 +1409,8 @@ export default function PixelArtBufferViews({
 
         texture.image = { data: field, width, height };
         texture.needsUpdate = true;
+        setSegmentFieldRevision((value) => value + 1);
+        invalidateRepeatedFieldTextures(path);
       });
 
       return texture;
@@ -2733,6 +2876,83 @@ export default function PixelArtBufferViews({
         }
       `,
     });
+    const segmentFieldDisplayMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        tSegmentField: { value: null },
+        tParticipation: { value: null },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+
+        void main() {
+          vUv = uv;
+          gl_Position = vec4(position.xy, 0.0, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D tSegmentField;
+        uniform sampler2D tParticipation;
+
+        varying vec2 vUv;
+
+        vec3 linearToSRGB(vec3 color) {
+          vec3 cutoff = step(color, vec3(0.0031308));
+          vec3 lower = color * 12.92;
+          vec3 upper = 1.055 * pow(max(color, vec3(0.0)), vec3(1.0 / 2.4)) - 0.055;
+          return mix(upper, lower, cutoff);
+        }
+
+        void main() {
+          float participation = texture2D(tParticipation, vUv).r;
+          if (participation < 0.0001) {
+            gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+            return;
+          }
+
+          vec3 fieldColor = vec3(texture2D(tSegmentField, vUv).xy, 0.0);
+          gl_FragColor = vec4(linearToSRGB(clamp(fieldColor, 0.0, 1.0)), 1.0);
+        }
+      `,
+    });
+    const segmentInsetMaskMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        tSegmentMask: { value: null },
+        texelSize: { value: new THREE.Vector2(1, 1) },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+
+        void main() {
+          vUv = uv;
+          gl_Position = vec4(position.xy, 0.0, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D tSegmentMask;
+        uniform vec2 texelSize;
+
+        varying vec2 vUv;
+
+        float sampleBlue(vec2 uv) {
+          return texture2D(tSegmentMask, uv).b;
+        }
+
+        void main() {
+          float segmentC = sampleBlue(vUv);
+          float segmentL = sampleBlue(clamp(vUv + vec2(-texelSize.x, 0.0), vec2(0.0), vec2(1.0)));
+          float segmentR = sampleBlue(clamp(vUv + vec2(texelSize.x, 0.0), vec2(0.0), vec2(1.0)));
+          float segmentU = sampleBlue(clamp(vUv + vec2(0.0, texelSize.y), vec2(0.0), vec2(1.0)));
+          float segmentD = sampleBlue(clamp(vUv + vec2(0.0, -texelSize.y), vec2(0.0), vec2(1.0)));
+
+          float inset = (1.0 - step(0.0001, segmentC)) * step(
+            0.0001,
+            max(max(segmentL, segmentR), max(segmentU, segmentD))
+          );
+
+          gl_FragColor = vec4(inset, 0.0, max(segmentC, inset), 1.0);
+        }
+      `,
+    });
     const segmentIndentedNormalMaterial = new THREE.ShaderMaterial({
       uniforms: {
         tColor: { value: null },
@@ -3049,31 +3269,30 @@ export default function PixelArtBufferViews({
         }
       `,
     });
-    const segmentIndentedAppliedPointLightsMaterial =
-      new THREE.ShaderMaterial({
-        uniforms: {
-          tColor: { value: null },
-          tSegmentMask: { value: null },
-          tParticipation: { value: null },
-          tSegmentField: { value: null },
-          tNormals: { value: null },
-          tTangents: { value: null },
-          tWorldPosition: { value: null },
-          texelSize: { value: new THREE.Vector2(1, 1) },
-          directionStrength: { value: insetDirectionStrength },
-          baseNormalWeight: { value: insetBaseNormalWeight },
-          litThreshold: { value: insetLitThreshold },
-          litFalloff: { value: insetLitFalloff },
-          bevelStrength: { value: insetBevelStrength },
-          darkenStrength: { value: insetDarkenStrength },
-          pointLightA: { value: new THREE.Vector3() },
-          pointLightB: { value: new THREE.Vector3() },
-          pointLightC: { value: new THREE.Vector3() },
-          pointColorA: { value: new THREE.Color("#ff6b6b") },
-          pointColorB: { value: new THREE.Color("#5eead4") },
-          pointColorC: { value: new THREE.Color("#fde047") },
-        },
-        vertexShader: `
+    const segmentIndentedAppliedPointLightsMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        tColor: { value: null },
+        tSegmentMask: { value: null },
+        tParticipation: { value: null },
+        tSegmentField: { value: null },
+        tNormals: { value: null },
+        tTangents: { value: null },
+        tWorldPosition: { value: null },
+        texelSize: { value: new THREE.Vector2(1, 1) },
+        directionStrength: { value: insetDirectionStrength },
+        baseNormalWeight: { value: insetBaseNormalWeight },
+        litThreshold: { value: insetLitThreshold },
+        litFalloff: { value: insetLitFalloff },
+        bevelStrength: { value: insetBevelStrength },
+        darkenStrength: { value: insetDarkenStrength },
+        pointLightA: { value: new THREE.Vector3() },
+        pointLightB: { value: new THREE.Vector3() },
+        pointLightC: { value: new THREE.Vector3() },
+        pointColorA: { value: new THREE.Color("#ff6b6b") },
+        pointColorB: { value: new THREE.Color("#5eead4") },
+        pointColorC: { value: new THREE.Color("#fde047") },
+      },
+      vertexShader: `
           varying vec2 vUv;
 
           void main() {
@@ -3081,7 +3300,7 @@ export default function PixelArtBufferViews({
             gl_Position = vec4(position.xy, 0.0, 1.0);
           }
         `,
-        fragmentShader: `
+      fragmentShader: `
           uniform sampler2D tColor;
           uniform sampler2D tSegmentMask;
           uniform sampler2D tParticipation;
@@ -3214,14 +3433,14 @@ export default function PixelArtBufferViews({
 
             vec3 litColor = min(
               color +
-                color * lightTint * inset * bevelStrength * 1.2,
+                color * lightTint * inset * bevelStrength * 4.0,
               vec3(1.0)
             );
             vec3 result = mix(litColor, litColor * darkenStrength, blue);
             gl_FragColor = vec4(linearToSRGB(clamp(result, 0.0, 1.0)), 1.0);
           }
         `,
-      });
+    });
     const segmentBakedNormalMapTexturePreviewMaterial =
       new THREE.ShaderMaterial({
         uniforms: {
@@ -3253,6 +3472,58 @@ export default function PixelArtBufferViews({
         }
       `,
       });
+    const segmentFieldTexturePreviewMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        tQuantizedField: {
+          value: generatedSegmentFieldTexture(selectedSegmentTexture.path),
+        },
+        tSmoothField: {
+          value: generatedSegmentFieldTexture(
+            selectedSegmentTexture.path,
+            true,
+          ),
+        },
+        fieldBlend: {
+          value:
+            insetControlsRef.current.fieldMode === "smooth"
+              ? 1
+              : insetControlsRef.current.fieldMode === "blend"
+                ? insetControlsRef.current.fieldBlend
+                : 0,
+        },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+
+        void main() {
+          vUv = uv;
+          gl_Position = vec4(position.xy, 0.0, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D tQuantizedField;
+        uniform sampler2D tSmoothField;
+        uniform float fieldBlend;
+
+        varying vec2 vUv;
+
+        void main() {
+          vec4 quantizedField = texture2D(tQuantizedField, vUv);
+          vec4 smoothField = texture2D(tSmoothField, vUv);
+          vec2 blendedDirection = mix(
+            quantizedField.xy * 2.0 - 1.0,
+            smoothField.xy * 2.0 - 1.0,
+            clamp(fieldBlend, 0.0, 1.0)
+          );
+          float directionLength = length(blendedDirection);
+          blendedDirection = directionLength > 0.0001
+            ? blendedDirection / directionLength
+            : vec2(0.0);
+          vec2 uvColor = blendedDirection * 0.5 + 0.5;
+          gl_FragColor = vec4(uvColor, 0.0, 1.0);
+        }
+      `,
+    });
     const segmentBakedNormalMapViewMaterial = new THREE.ShaderMaterial({
       uniforms: {
         tColor: { value: null },
@@ -3598,6 +3869,22 @@ export default function PixelArtBufferViews({
       camera.position.copy(baseCameraPosition);
       camera.lookAt(target);
       camera.updateProjectionMatrix();
+    };
+
+    const snapPositionToCameraTexels = (
+      position: THREE.Vector3,
+      camera: THREE.OrthographicCamera,
+      renderWidth: number,
+      renderHeight: number,
+    ) => {
+      const snapped = camera.worldToLocal(position.clone());
+      const texelWidth =
+        (camera.right - camera.left) / Math.max(renderWidth, 1);
+      const texelHeight =
+        (camera.top - camera.bottom) / Math.max(renderHeight, 1);
+      snapped.x = Math.round(snapped.x / texelWidth) * texelWidth;
+      snapped.y = Math.round(snapped.y / texelHeight) * texelHeight;
+      return camera.localToWorld(snapped);
     };
 
     const createRenderer = (mount: HTMLDivElement) => {
@@ -4470,6 +4757,7 @@ export default function PixelArtBufferViews({
       if (
         activeMode === "objectIdEdges" ||
         activeMode === "segmentEdges" ||
+        activeMode === "segmentInsetMask" ||
         activeMode === "segmentIndented" ||
         activeMode === "segmentIndentedOrbit" ||
         activeMode === "segmentIndentedNormal" ||
@@ -4495,6 +4783,7 @@ export default function PixelArtBufferViews({
         depthEdgeTargets.set(activeMode, objectIdTarget);
         if (
           activeMode === "segmentEdges" ||
+          activeMode === "segmentInsetMask" ||
           activeMode === "segmentIndented" ||
           activeMode === "segmentIndentedOrbit" ||
           activeMode === "segmentIndentedNormal" ||
@@ -4524,6 +4813,7 @@ export default function PixelArtBufferViews({
           depthEdgeTargets.set("tangents", segmentTangentTarget);
 
           if (
+            activeMode === "segmentInsetMask" ||
             activeMode === "segmentIndented" ||
             activeMode === "segmentIndentedOrbit" ||
             activeMode === "segmentIndentedNormal" ||
@@ -4763,8 +5053,13 @@ export default function PixelArtBufferViews({
           1,
           Math.round(height * devicePixelRatio),
         );
-        const renderWidth = Math.max(1, Math.round(width / PIXEL_SCALE));
-        const renderHeight = Math.max(1, Math.round(height / PIXEL_SCALE));
+        const useFullResolutionPreview = mount === mounts.segmentFieldTexture;
+        const renderWidth = useFullResolutionPreview
+          ? displayWidth
+          : Math.max(1, Math.round(width / PIXEL_SCALE));
+        const renderHeight = useFullResolutionPreview
+          ? displayHeight
+          : Math.max(1, Math.round(height / PIXEL_SCALE));
 
         configureCamera(camera, width, height);
         renderer.setSize(displayWidth, displayHeight, false);
@@ -4775,6 +5070,7 @@ export default function PixelArtBufferViews({
           mount === mounts.normalEdges ||
           mount === mounts.objectIdEdges ||
           mount === mounts.segmentEdges ||
+          mount === mounts.segmentInsetMask ||
           mount === mounts.segmentIndented ||
           mount === mounts.segmentIndentedOrbit ||
           mount === mounts.segmentIndentedNormal ||
@@ -4795,31 +5091,36 @@ export default function PixelArtBufferViews({
                 ? "objectIdEdges"
                 : mount === mounts.segmentEdges
                   ? "segmentEdges"
-                  : mount === mounts.segmentIndented
-                    ? "segmentIndented"
-                    : mount === mounts.segmentIndentedOrbit
-                      ? "segmentIndentedOrbit"
-                      : mount === mounts.segmentIndentedNormal
-                        ? "segmentIndentedNormal"
-                        : mount === mounts.segmentIndentedLit
-                          ? "segmentIndentedLit"
-                          : mount === mounts.segmentIndentedApplied
-                            ? "segmentIndentedApplied"
-                          : mount === mounts.segmentIndentedAppliedOrbit
-                            ? "segmentIndentedAppliedOrbit"
-                          : mount === mounts.segmentIndentedAppliedPointLights
-                            ? "segmentIndentedAppliedPointLights"
-                          : mount === mounts.segmentBakedNormalMapView
-                                ? "segmentBakedNormalMapView"
-                                : mount === mounts.segmentBakedNormalMapApplied
-                                  ? "segmentBakedNormalMapApplied"
-                                  : "normalEdges",
+                  : mount === mounts.segmentInsetMask
+                    ? "segmentInsetMask"
+                    : mount === mounts.segmentIndented
+                      ? "segmentIndented"
+                      : mount === mounts.segmentIndentedOrbit
+                        ? "segmentIndentedOrbit"
+                        : mount === mounts.segmentIndentedNormal
+                          ? "segmentIndentedNormal"
+                          : mount === mounts.segmentIndentedLit
+                            ? "segmentIndentedLit"
+                            : mount === mounts.segmentIndentedApplied
+                              ? "segmentIndentedApplied"
+                              : mount === mounts.segmentIndentedAppliedOrbit
+                                ? "segmentIndentedAppliedOrbit"
+                                : mount ===
+                                    mounts.segmentIndentedAppliedPointLights
+                                  ? "segmentIndentedAppliedPointLights"
+                                  : mount === mounts.segmentBakedNormalMapView
+                                    ? "segmentBakedNormalMapView"
+                                    : mount ===
+                                        mounts.segmentBakedNormalMapApplied
+                                      ? "segmentBakedNormalMapApplied"
+                                      : "normalEdges",
           );
           if (depthTarget) {
             depthTarget.setSize(renderWidth, renderHeight);
           }
           if (
             mount === mounts.segmentEdges ||
+            mount === mounts.segmentInsetMask ||
             mount === mounts.segmentIndented ||
             mount === mounts.segmentIndentedOrbit ||
             mount === mounts.segmentIndentedNormal ||
@@ -4838,6 +5139,7 @@ export default function PixelArtBufferViews({
               .get("tangents")
               ?.setSize(renderWidth, renderHeight);
             if (
+              mount === mounts.segmentInsetMask ||
               mount === mounts.segmentIndented ||
               mount === mounts.segmentIndentedOrbit ||
               mount === mounts.segmentIndentedNormal ||
@@ -5035,6 +5337,12 @@ export default function PixelArtBufferViews({
         renderSegments(renderer, camera);
         renderer.setRenderTarget(null);
         presentUpscaled(renderer, outputTarget, false);
+      } else if (mode === "segmentFieldTexture") {
+        postQuad.material = segmentFieldTexturePreviewMaterial;
+        renderer.setRenderTarget(outputTarget);
+        renderer.render(postScene, postCamera);
+        renderer.setRenderTarget(null);
+        presentUpscaled(renderer, outputTarget, false);
       } else if (mode === "segmentCenterField") {
         renderer.setRenderTarget(outputTarget);
         renderSegmentCenterField(renderer, camera);
@@ -5201,6 +5509,7 @@ export default function PixelArtBufferViews({
           );
         } else if (
           mode === "segmentEdges" ||
+          mode === "segmentInsetMask" ||
           mode === "segmentIndented" ||
           mode === "segmentIndentedOrbit" ||
           mode === "segmentIndentedNormal" ||
@@ -5313,6 +5622,27 @@ export default function PixelArtBufferViews({
             1 / target.height,
           );
 
+          if (mode === "segmentInsetMask") {
+            if (!standaloneSegmentMaskTarget) return;
+            renderer.setRenderTarget(standaloneSegmentMaskTarget);
+            renderer.render(postScene, postCamera);
+            renderer.setRenderTarget(null);
+
+            postQuad.material = segmentInsetMaskMaterial;
+            segmentInsetMaskMaterial.uniforms.tSegmentMask.value =
+              standaloneSegmentMaskTarget.texture;
+            segmentInsetMaskMaterial.uniforms.texelSize.value.set(
+              1 / target.width,
+              1 / target.height,
+            );
+
+            renderer.setRenderTarget(outputTarget);
+            renderer.render(postScene, postCamera);
+            renderer.setRenderTarget(null);
+            presentUpscaled(renderer, outputTarget, false);
+            return;
+          }
+
           if (
             mode === "segmentIndented" ||
             mode === "segmentIndentedOrbit" ||
@@ -5381,25 +5711,29 @@ export default function PixelArtBufferViews({
               .normalize();
 
             const indentedMaterial =
-              mode === "segmentIndentedLit"
-                ? segmentIndentedLitMaterial
-                : mode === "segmentIndentedApplied" ||
-                    mode === "segmentIndentedAppliedOrbit"
-                  ? segmentIndentedAppliedMaterial
-                : mode === "segmentIndentedAppliedPointLights"
-                  ? segmentIndentedAppliedPointLightsMaterial
-                : mode === "segmentBakedNormalMapView"
-                  ? segmentBakedNormalMapViewMaterial
-                    : mode === "segmentBakedNormalMapApplied"
-                      ? segmentBakedNormalMapAppliedMaterial
-                      : mode === "segmentIndentedNormal"
-                        ? segmentIndentedNormalMaterial
-                        : segmentIndentedMaterial;
+              mode === "segmentIndented"
+                ? segmentFieldDisplayMaterial
+                : mode === "segmentIndentedLit"
+                  ? segmentIndentedLitMaterial
+                  : mode === "segmentIndentedApplied" ||
+                      mode === "segmentIndentedAppliedOrbit"
+                    ? segmentIndentedAppliedMaterial
+                    : mode === "segmentIndentedAppliedPointLights"
+                      ? segmentIndentedAppliedPointLightsMaterial
+                      : mode === "segmentBakedNormalMapView"
+                        ? segmentBakedNormalMapViewMaterial
+                        : mode === "segmentBakedNormalMapApplied"
+                          ? segmentBakedNormalMapAppliedMaterial
+                          : mode === "segmentIndentedNormal"
+                            ? segmentIndentedNormalMaterial
+                            : segmentIndentedMaterial;
             postQuad.material = indentedMaterial;
-            indentedMaterial.uniforms.tColor.value =
-              mode === "segmentIndentedNormal"
-                ? segmentNormalTarget.texture
-                : standaloneColorTarget.texture;
+            if ("tColor" in indentedMaterial.uniforms) {
+              indentedMaterial.uniforms.tColor.value =
+                mode === "segmentIndentedNormal"
+                  ? segmentNormalTarget.texture
+                  : standaloneColorTarget.texture;
+            }
             if ("tSegmentMask" in indentedMaterial.uniforms) {
               indentedMaterial.uniforms.tSegmentMask.value =
                 standaloneSegmentMaskTarget.texture;
@@ -5442,7 +5776,13 @@ export default function PixelArtBufferViews({
             }
             if ("bevelStrength" in indentedMaterial.uniforms) {
               indentedMaterial.uniforms.bevelStrength.value =
-                insetControlsRef.current.bevelStrength;
+                mode === "segmentIndentedLit" ||
+                mode === "segmentIndentedApplied" ||
+                mode === "segmentIndentedAppliedOrbit" ||
+                mode === "segmentIndentedAppliedPointLights"
+                  ? insetControlsRef.current.directionStrength *
+                    SHARED_INDENT_TO_BEVEL_SCALE
+                  : insetControlsRef.current.bevelStrength;
             }
             if ("darkenStrength" in indentedMaterial.uniforms) {
               indentedMaterial.uniforms.darkenStrength.value =
@@ -5464,10 +5804,12 @@ export default function PixelArtBufferViews({
               indentedMaterial.uniforms.tTangents.value =
                 segmentTangentTarget.texture;
             }
-            indentedMaterial.uniforms.texelSize.value.set(
-              1 / target.width,
-              1 / target.height,
-            );
+            if ("texelSize" in indentedMaterial.uniforms) {
+              indentedMaterial.uniforms.texelSize.value.set(
+                1 / target.width,
+                1 / target.height,
+              );
+            }
             if ("lightDirection" in indentedMaterial.uniforms) {
               indentedMaterial.uniforms.lightDirection.value.copy(
                 worldLightDirection,
@@ -5559,22 +5901,57 @@ export default function PixelArtBufferViews({
       }
 
       if (activeModes.includes("segmentIndentedAppliedPointLights")) {
-        const planeExtent = 2.65;
+        const ringRadiusA = 2.35;
+        const ringRadiusB = 2.55;
+        const ringRadiusC = 2.2;
         pointLightA.position.set(
-          Math.sin(elapsed * 0.9) * planeExtent,
-          1.35 + Math.sin(elapsed * 1.7) * 0.18,
-          Math.cos(elapsed * 1.1) * planeExtent,
+          Math.sin(elapsed * 0.9) * ringRadiusA,
+          2.15 + Math.sin(elapsed * 1.1) * 0.45,
+          Math.cos(elapsed * 1.1) * ringRadiusA,
         );
         pointLightB.position.set(
-          Math.sin(elapsed * 1.2 + 1.6) * planeExtent,
-          1.6 + Math.cos(elapsed * 1.4) * 0.2,
-          Math.cos(elapsed * 0.85 + 0.9) * planeExtent,
+          Math.sin(elapsed * 1.2 + 1.6) * ringRadiusB,
+          2.55 + Math.cos(elapsed * 0.9 + 0.8) * 0.5,
+          Math.cos(elapsed * 0.85 + 0.9) * ringRadiusB,
         );
         pointLightC.position.set(
-          Math.sin(elapsed * 0.75 + 3.1) * planeExtent,
-          1.2 + Math.sin(elapsed * 1.1 + 0.5) * 0.22,
-          Math.cos(elapsed * 1.35 + 2.4) * planeExtent,
+          Math.sin(elapsed * 0.75 + 3.1) * ringRadiusC,
+          1.95 + Math.sin(elapsed * 1.35 + 0.5) * 0.4,
+          Math.cos(elapsed * 1.35 + 2.4) * ringRadiusC,
         );
+
+        const pointLightCamera = cameras.get(
+          "segmentIndentedAppliedPointLights",
+        );
+        const pointLightDisplayTarget = resizeEntries.get(
+          "segmentIndentedAppliedPointLights",
+        )?.displayTarget;
+        if (pointLightCamera && pointLightDisplayTarget) {
+          pointLightA.position.copy(
+            snapPositionToCameraTexels(
+              pointLightA.position,
+              pointLightCamera,
+              pointLightDisplayTarget.width,
+              pointLightDisplayTarget.height,
+            ),
+          );
+          pointLightB.position.copy(
+            snapPositionToCameraTexels(
+              pointLightB.position,
+              pointLightCamera,
+              pointLightDisplayTarget.width,
+              pointLightDisplayTarget.height,
+            ),
+          );
+          pointLightC.position.copy(
+            snapPositionToCameraTexels(
+              pointLightC.position,
+              pointLightCamera,
+              pointLightDisplayTarget.width,
+              pointLightDisplayTarget.height,
+            ),
+          );
+        }
       }
 
       if (activeModes.includes("segmentIndentedOrbit")) {
@@ -5591,12 +5968,8 @@ export default function PixelArtBufferViews({
       const segmentCellLightDirection = new THREE.Vector3()
         .subVectors(keyLight.position, lookTarget)
         .normalize();
-      const fieldBlend =
-        insetControlsRef.current.fieldMode === "smooth"
-          ? 1
-          : insetControlsRef.current.fieldMode === "blend"
-            ? insetControlsRef.current.fieldBlend
-            : 0;
+      const fieldBlend = insetControlsRef.current.fieldBlend;
+      segmentFieldTexturePreviewMaterial.uniforms.fieldBlend.value = fieldBlend;
       segmentFieldMaterials.forEach((material) => {
         material.uniforms.fieldBlend.value = fieldBlend;
       });
@@ -5656,7 +6029,9 @@ export default function PixelArtBufferViews({
       objectIdEdgeMaterial.dispose();
       segmentEdgeMaterial.dispose();
       segmentAxesMaterial.dispose();
+      segmentInsetMaskMaterial.dispose();
       segmentIndentedMaterial.dispose();
+      segmentFieldDisplayMaterial.dispose();
       segmentIndentedNormalMaterial.dispose();
       upscaleMaterial.dispose();
       upscaleQuad.geometry.dispose();
@@ -5695,6 +6070,7 @@ export default function PixelArtBufferViews({
       segmentCellBevelMaterials.forEach((material) => material.dispose());
       segmentDisabledMaterial.dispose();
       crystalMaterial.dispose();
+      segmentFieldTexturePreviewMaterial.dispose();
       disposableModelMaterials.forEach((material) => material.dispose());
       objectIdEntries.forEach(({ objectIdMaterial }) => {
         if (Array.isArray(objectIdMaterial)) {
@@ -5710,7 +6086,13 @@ export default function PixelArtBufferViews({
         }
       });
     };
-  }, [mode, segmentTextureDependency, segmentFieldDependency, isRendererActive]);
+  }, [
+    mode,
+    segmentTextureDependency,
+    segmentFieldDependency,
+    segmentFieldRevision,
+    isRendererActive,
+  ]);
 
   const showDepthControl =
     mode === "depthEdgesOnly" ||
@@ -5720,6 +6102,7 @@ export default function PixelArtBufferViews({
   const shouldShowSegmentTexturePicker =
     showSegmentTexturePicker ||
     mode === "segmentOnly" ||
+    mode === "segmentInsetMaskOnly" ||
     mode === "segmentCellBevelOnly" ||
     mode === "segmentEdgesOnly" ||
     mode === "segmentIndentedOnly" ||
@@ -5732,9 +6115,8 @@ export default function PixelArtBufferViews({
     mode === "segmentBakedNormalMapViewOnly" ||
     mode === "segmentBakedNormalMapAppliedOnly" ||
     mode === "combinedMaskOnly";
-  const showSegmentFieldUnderlayControl =
-    mode === "segmentIndentedOnly" || mode === "segmentIndentedOrbitOnly";
-  const showSegmentFieldModeControl =
+  const showSegmentFieldUnderlayControl = mode === "segmentIndentedOrbitOnly";
+  const showSegmentFieldBlendControl =
     mode === "segmentIndentedOnly" ||
     mode === "segmentIndentedOrbitOnly" ||
     mode === "segmentIndentedNormalOnly" ||
@@ -5742,9 +6124,13 @@ export default function PixelArtBufferViews({
     mode === "segmentIndentedAppliedOnly" ||
     mode === "segmentIndentedAppliedOrbitOnly" ||
     mode === "segmentIndentedAppliedPointLightsOnly";
-  const showSegmentFieldBlendControl = showSegmentFieldModeControl;
   const showInsetNormalControls =
     mode === "segmentIndentedNormalOnly" ||
+    mode === "segmentIndentedLitOnly" ||
+    mode === "segmentIndentedAppliedOnly" ||
+    mode === "segmentIndentedAppliedOrbitOnly" ||
+    mode === "segmentIndentedAppliedPointLightsOnly";
+  const useSharedIndentBevelControl =
     mode === "segmentIndentedLitOnly" ||
     mode === "segmentIndentedAppliedOnly" ||
     mode === "segmentIndentedAppliedOrbitOnly" ||
@@ -5755,6 +6141,7 @@ export default function PixelArtBufferViews({
     mode === "segmentIndentedAppliedOrbitOnly" ||
     mode === "segmentIndentedAppliedPointLightsOnly";
   const showInsetBevelStrengthControl = showInsetLitThresholdControl;
+  const showInsetDarkenStrengthControl = false;
   const showBakedNormalMapBlendControl =
     mode === "segmentBakedNormalMapViewOnly" ||
     mode === "segmentBakedNormalMapAppliedOnly";
@@ -5802,13 +6189,6 @@ export default function PixelArtBufferViews({
     }
     if (typeof next.darkenStrength === "number") {
       setInsetDarkenStrength(next.darkenStrength);
-    }
-    if (
-      next.fieldMode === "quantized" ||
-      next.fieldMode === "smooth" ||
-      next.fieldMode === "blend"
-    ) {
-      setInsetFieldMode(next.fieldMode);
     }
     if (typeof next.fieldBlend === "number") {
       setInsetFieldBlend(next.fieldBlend);
@@ -5881,9 +6261,23 @@ export default function PixelArtBufferViews({
         />
       )}
 
+      {mode === "segmentFieldTextureOnly" && (
+        <div
+          ref={segmentFieldTextureRef}
+          className="pixel-buffer-demo__viewport pixel-buffer-demo__viewport--solo"
+        />
+      )}
+
       {mode === "segmentCenterFieldOnly" && (
         <div
           ref={segmentCenterFieldRef}
+          className="pixel-buffer-demo__viewport pixel-buffer-demo__viewport--solo"
+        />
+      )}
+
+      {mode === "segmentInsetMaskOnly" && (
+        <div
+          ref={segmentInsetMaskRef}
           className="pixel-buffer-demo__viewport pixel-buffer-demo__viewport--solo"
         />
       )}
@@ -6244,51 +6638,6 @@ export default function PixelArtBufferViews({
         </div>
       )}
 
-      {showSegmentFieldModeControl && (
-        <div className="pixel-buffer-demo__controls">
-          <div className="pixel-buffer-demo__control-row">
-            <label
-              className="pixel-buffer-demo__control"
-              aria-label="Field mode"
-            >
-              <span>Field Mode</span>
-              <select
-                value={insetFieldMode}
-                onChange={(event) =>
-                  updateInsetControls({
-                    fieldMode: event.currentTarget.value as
-                      | "quantized"
-                      | "smooth"
-                      | "blend",
-                  })
-                }
-              >
-                <option value="quantized">Quantized</option>
-                <option value="smooth">Smooth</option>
-                <option value="blend">Blend</option>
-              </select>
-            </label>
-            <button
-              className="pixel-buffer-demo__reset"
-              type="button"
-              aria-label="Reset field mode"
-              onClick={() =>
-                updateInsetControls({
-                  fieldMode: INSET_FIELD_MODE,
-                })
-              }
-            >
-              <svg viewBox="0 0 32 32" aria-hidden="true">
-                <path
-                  d="M18,28A12,12,0,1,0,6,16v6.2L2.4,18.6,1,20l6,6,6-6-1.4-1.4L8,22.2V16H8A10,10,0,1,1,18,26Z"
-                  fill="currentColor"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
-
       {showSegmentFieldUnderlayControl && (
         <div className="pixel-buffer-demo__controls">
           <div className="pixel-buffer-demo__control-row">
@@ -6327,7 +6676,7 @@ export default function PixelArtBufferViews({
         </div>
       )}
 
-      {showSegmentFieldBlendControl && insetFieldMode === "blend" && (
+      {showSegmentFieldBlendControl && (
         <div className="pixel-buffer-demo__controls">
           <div className="pixel-buffer-demo__control-row">
             <label
@@ -6371,60 +6720,22 @@ export default function PixelArtBufferViews({
 
       {showInsetNormalControls && (
         <div className="pixel-buffer-demo__controls">
-          <div className="pixel-buffer-demo__control-row">
-            <label
-              className="pixel-buffer-demo__control"
-              aria-label="Inset direction strength"
-            >
-              <span>Direction Strength</span>
-              <input
-                type="range"
-                min="0"
-                max="2"
-                step="0.01"
-                value={insetDirectionStrength}
-                onChange={(event) =>
-                  updateInsetControls({
-                    directionStrength: Number(event.currentTarget.value),
-                  })
-                }
-              />
-            </label>
-            <button
-              className="pixel-buffer-demo__reset"
-              type="button"
-              aria-label="Reset inset direction strength"
-              onClick={() =>
-                updateInsetControls({
-                  directionStrength: INSET_DIRECTION_STRENGTH,
-                })
-              }
-            >
-              <svg viewBox="0 0 32 32" aria-hidden="true">
-                <path
-                  d="M18,28A12,12,0,1,0,6,16v6.2L2.4,18.6,1,20l6,6,6-6-1.4-1.4L8,22.2V16H8A10,10,0,1,1,18,26Z"
-                  fill="currentColor"
-                />
-              </svg>
-            </button>
-          </div>
-
-          {showInsetBevelStrengthControl && (
+          {!useSharedIndentBevelControl && (
             <div className="pixel-buffer-demo__control-row">
               <label
                 className="pixel-buffer-demo__control"
-                aria-label="Bevel strength"
+                aria-label="Indent strength"
               >
-                <span>Bevel Strength</span>
+                <span>Indent Strength</span>
                 <input
                   type="range"
                   min="0"
-                  max="4"
+                  max="2"
                   step="0.01"
-                  value={insetBevelStrength}
+                  value={insetDirectionStrength}
                   onChange={(event) =>
                     updateInsetControls({
-                      bevelStrength: Number(event.currentTarget.value),
+                      directionStrength: Number(event.currentTarget.value),
                     })
                   }
                 />
@@ -6432,10 +6743,86 @@ export default function PixelArtBufferViews({
               <button
                 className="pixel-buffer-demo__reset"
                 type="button"
-                aria-label="Reset bevel strength"
+                aria-label="Reset inset direction strength"
                 onClick={() =>
                   updateInsetControls({
-                    bevelStrength: INSET_BEVEL_STRENGTH,
+                    directionStrength: INSET_DIRECTION_STRENGTH,
+                  })
+                }
+              >
+                <svg viewBox="0 0 32 32" aria-hidden="true">
+                  <path
+                    d="M18,28A12,12,0,1,0,6,16v6.2L2.4,18.6,1,20l6,6,6-6-1.4-1.4L8,22.2V16H8A10,10,0,1,1,18,26Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </button>
+            </div>
+          )}
+
+          {showInsetBevelStrengthControl && (
+            <div className="pixel-buffer-demo__control-row">
+              <label
+                className="pixel-buffer-demo__control"
+                aria-label={
+                  useSharedIndentBevelControl
+                    ? "Indent strength"
+                    : "Bevel strength"
+                }
+              >
+                <span>
+                  {useSharedIndentBevelControl
+                    ? "Indent Strength"
+                    : "Bevel Strength"}
+                </span>
+                <input
+                  type="range"
+                  min="0"
+                  max={useSharedIndentBevelControl ? "2" : "4"}
+                  step="0.01"
+                  value={
+                    useSharedIndentBevelControl
+                      ? insetDirectionStrength
+                      : insetBevelStrength
+                  }
+                  onChange={(event) =>
+                    updateInsetControls({
+                      ...(useSharedIndentBevelControl
+                        ? {
+                            directionStrength: Number(
+                              event.currentTarget.value,
+                            ),
+                            bevelStrength:
+                              Number(event.currentTarget.value) *
+                              SHARED_INDENT_TO_BEVEL_SCALE,
+                          }
+                        : {
+                            bevelStrength: Number(event.currentTarget.value),
+                          }),
+                    })
+                  }
+                />
+              </label>
+              <button
+                className="pixel-buffer-demo__reset"
+                type="button"
+                aria-label={
+                  useSharedIndentBevelControl
+                    ? "Reset indent strength"
+                    : "Reset bevel strength"
+                }
+                onClick={() =>
+                  updateInsetControls({
+                    ...(useSharedIndentBevelControl
+                      ? {
+                          directionStrength: INSET_DIRECTION_STRENGTH,
+                          bevelStrength:
+                            INSET_DIRECTION_STRENGTH *
+                            SHARED_INDENT_TO_BEVEL_SCALE,
+                        }
+                      : {
+                          bevelStrength: INSET_BEVEL_STRENGTH,
+                        }),
                   })
                 }
               >
@@ -6497,7 +6884,7 @@ export default function PixelArtBufferViews({
                   <input
                     type="range"
                     min="0"
-                    max="0.5"
+                    max="1"
                     step="0.01"
                     value={insetLitFalloff}
                     onChange={(event) =>
@@ -6528,9 +6915,7 @@ export default function PixelArtBufferViews({
             </>
           )}
 
-          {(mode === "segmentIndentedAppliedOnly" ||
-            mode === "segmentIndentedAppliedOrbitOnly" ||
-            mode === "segmentIndentedAppliedPointLightsOnly") && (
+          {showInsetDarkenStrengthControl && (
             <div className="pixel-buffer-demo__control-row">
               <label
                 className="pixel-buffer-demo__control"

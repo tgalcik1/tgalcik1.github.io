@@ -21,7 +21,15 @@ import ArticleAugmentedBlendPreview from "../../components/ArticleAugmentedBlend
 import ArticleSegmentBuffer from "../../components/ArticleSegmentBuffer.astro";
 import ArticleSegmentOutlineMask from "../../components/ArticleSegmentOutlineMask.astro";
 import ArticleCombinedOutlineMask from "../../components/ArticleCombinedOutlineMask.astro";
-import ArticleIndentedSegmentNormals from "../../components/ArticleIndentedSegmentNormals.astro";
+import ArticleInsetMask from "../../components/ArticleInsetMask.astro";
+import ArticleSegmentFieldTexture from "../../components/ArticleSegmentFieldTexture.astro";
+import ArticleIndentedSegmentBoundaries from "../../components/ArticleIndentedSegmentBoundaries.astro";
+import ArticleIndentedSegmentBoundariesOrbit from "../../components/ArticleIndentedSegmentBoundariesOrbit.astro";
+import ArticleInsetWorldNormals from "../../components/ArticleInsetWorldNormals.astro";
+import ArticleInsetNdotLLighting from "../../components/ArticleInsetNdotLLighting.astro";
+import ArticleAppliedInsetShading from "../../components/ArticleAppliedInsetShading.astro";
+import ArticleAppliedInsetShadingOrbit from "../../components/ArticleAppliedInsetShadingOrbit.astro";
+import ArticleAppliedInsetShadingPointLights from "../../components/ArticleAppliedInsetShadingPointLights.astro";
 import Note from "../../components/Note.astro";
 import SegmentMapNote from "../../components/SegmentMapNote.astro";
 
@@ -129,7 +137,7 @@ We can fold these in with our existing normal edges, resulting in clean, crisp o
 
 # Segment highlights
 
-The last bit of detail we can add in is "segment" highlights. I read about this from <a href="https://starbi.dev/#empty-spaces" target="_blank" rel="noreferrer">starbi's amazing writeup</a> on a 3D recreation of a pixel art piece. They explained a clever approach to achieving "pixel-perfect lines on mesh surfaces", calling it <b>segment edge detection</b>.
+Another bit of detail we can add in is "segment" highlights. I read about this from <a href="https://starbi.dev/#empty-spaces" target="_blank" rel="noreferrer">starbi's amazing writeup</a> on a 3D recreation of a pixel art piece. They explained a clever approach to achieving "pixel-perfect lines on mesh surfaces", calling it <b>segment edge detection</b>.
 
 The idea is similar to the object ID buffer described above. With segment edge detection, instead of assigning a unique ID per renderer, we can author textures (I will refer to them as <b>segment maps</b>) containing identifiers for distinct surface segments within an area.
 
@@ -146,6 +154,8 @@ Just like all of our other edge detection approaches above, we can determine dis
 Below is our combined mask at this point:
 
 <ArticleCombinedOutlineMask />
+
+# Segment edge indents
 
 Starbi also describes optionally "generating indented normals along the line". This is a nice-looking effect where segment edges appear to get a sort of "bevel" along the edge. Since our bevel needs to go "along the line", we can first inset our segment edges:
 
@@ -171,7 +181,69 @@ float3 debug = float3(inset, 0.0, max(segment_c, inset));
 
 </CodeWindow>
 
-<ArticleIndentedSegmentNormals />
+<ArticleInsetMask />
+
+This will be our mask for the areas in which our indented normals will be applied. To build those normals, we can generate a helper texture for our segment map that stores the direction from each texel in a segment cell toward that cell's center. We will be turning these directions into world-space normals later on in-shader. I chose to create two cell direction field textures; one with smooth continuous values, and one quantized into discrete directions derived from cell boundaries. I found that using a blend of these two leads to a nice effect once we apply lighting later. You can cut down on texture memory by pre-baking your blend into one texture, if you have a blend value in mind that you like and don't plan on changing.
+
+<ArticleIndentedSegmentBoundaries />
+
+We now have a view-stable basis to derive our normals from, and a mask for where to apply them.
+
+<ArticleIndentedSegmentBoundariesOrbit />
+
+We have to convert these from local UV-space directions to world-space normals. Our texture gives us `x` as direction along the tangent axis, and `y` as our direction along the bitangent axis.
+
+<CodeWindow title="UV-Space To World-Space Normals" language="HLSL (pseudocode)">
+
+```hlsl
+// 2d direction field from texture space
+float2 indent = texture(SEGMENT_FIELD_TEXTURE, screenUV).xy * 2.0 - 1.0;
+
+// convert normal from object to world-space
+float3 normalWS = normalize((MODEL_MATRIX * float4(NORMAL, 0.0)).xyz);
+
+// convert tangent from object to world-space
+float3 tangentWS = normalize((MODEL_MATRIX * float4(TANGENT.xyz, 0.0)).xyz);
+
+// B = cross(N, T) * handedness
+float3 bitangentWS = normalize(cross(normalWS, tangentWS) * TANGENT.w);
+
+// indent normal in world-space
+float3 indentNormal = normalize(
+    tangentWS   * indent.x * indentStrength +
+    bitangentWS * indent.y * indentStrength +
+    baseNormal * baseNormalWeight
+);
+```
+
+</CodeWindow>
+
+<ArticleInsetWorldNormals />
+
+Finally, we have our indented world space normals, and can use this to modulate attenuation along our segment edges. The benefit of using a blend between smooth and quantized direction field maps is that we have more control over how the light seems to "catch" along straight edges. I find that blending quantization in helps for grid-like segment maps, whereas keep continuous direction fields looks better for circular/rounded segment maps.
+
+I like to use a primary threshold with some subtle falloff to keep the indent focused but still soft as it tails out; the falloff helps avoid popping when the light direction/surface orientation changes.
+
+<ArticleInsetNdotLLighting />
+
+Again, we can blend this into our scene. Below shows the original segment edges darkened, with indented normal edges brightened.
+
+<ArticleAppliedInsetShading />
+
+During camera rotation, the indented lighting stays stable.
+
+<ArticleAppliedInsetShadingOrbit />
+
+We can also experiment with how it looks using some point lights:
+
+<ArticleAppliedInsetShadingPointLights />
+
+# Closing remarks
+
+# Resources
+
+- "Creating a Pixel Art Scene in Realtime 3D" by t3ssel8r: https://imgur.com/gallery/creating-pixel-art-scene-realtime-3d-qwhbHQq
+- "Empty Spaces" by starbi: https://starbi.dev/#empty-spaces
 
 <Note variant="primary" title="Site under construction">
   If you're reading this, I'm still working on finishing this up!

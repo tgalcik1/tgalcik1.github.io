@@ -1,0 +1,12 @@
+---
+import PixelArtBufferViews from "./PixelArtBufferViews";
+import ArticleIndentedSegmentDemo from "./ArticleIndentedSegmentDemo.astro";
+---
+
+<ArticleIndentedSegmentDemo title="Inset World Normals" subtitle="live pass">
+  <PixelArtBufferViews
+    mode="segmentIndentedNormalOnly"
+    showSegmentTexturePicker={true}
+    client:visible
+  />
+</ArticleIndentedSegmentDemo>

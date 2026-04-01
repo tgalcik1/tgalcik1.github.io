@@ -1,0 +1,12 @@
+---
+import PixelArtBufferViews from "./PixelArtBufferViews";
+import ArticleIndentedSegmentDemo from "./ArticleIndentedSegmentDemo.astro";
+---
+
+<ArticleIndentedSegmentDemo title="Segment Inset Mask" subtitle="live pass">
+  <PixelArtBufferViews
+    mode="segmentInsetMaskOnly"
+    showSegmentTexturePicker={true}
+    client:visible
+  />
+</ArticleIndentedSegmentDemo>
