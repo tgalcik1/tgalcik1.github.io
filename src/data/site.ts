@@ -2,18 +2,16 @@ export const site = {
   name: "Tristan Galcik",
   shortName: "Tristan Galcik",
   role: "Software Developer",
-  email: "hello@tristangalcik.com",
+  email: "tristan.galcik@gmail.com",
   location: "United States",
-  intro:
-    "I build products with solid systems underneath and visual ideas that feel considered instead of ornamental.",
+  intro: "Full-stack software engineer based in Baltimore, MD",
   heroLineA: "Building",
   heroEmphasis: "creative",
   heroLineB: "things",
   avatarPath: "/images/avatar.jpg",
   aboutImagePath: "/images/about.jpg",
   bio: "Full stack, but with a soft spot for graphics",
-  aboutIntro:
-    "I'm a developer interested in the overlap between product engineering, graphics, and systems that feel intentional in use.",
+  aboutIntro: "",
   aboutParagraphs: [
     "Hi, I'm Tristan! I'm a developer based in Baltimore, Maryland. I have a background in full-stack product engineering, but I also have a strong interest in graphics programming, shader development, and just about anything that lets me explore visual ideas with code.",
     "I started learning coding with game development in Unity, and found myself moreso drawn to the graphics and systems side of things than the gameplay scripting. I later went on to work in product engineering roles, but I still find myself drawn back to graphics experiments and visual projects in my free time.",
@@ -36,49 +34,4 @@ export const site = {
   ] as const,
 };
 
-export const featuredProjects = [
-  {
-    id: "01",
-    title: "Noise Field Lab",
-    date: "2024 - 2025",
-    category: "Shader",
-    stack: "WebGL · GLSL · React",
-    description:
-      "A live playground for layered noise, palette tuning, and motion studies used to prototype visual identities.",
-    accent: "warm",
-    preview: { type: "shader", label: "Live shader study" },
-  },
-  {
-    id: "02",
-    title: "Realtime Canvas",
-    date: "01/2024 - 06/2024",
-    category: "Full-stack",
-    stack: "Astro · Node · WebSocket",
-    description:
-      "Collaborative drawing and annotation built around low-latency updates, resilient sessions, and clean interaction design.",
-    accent: "sage",
-    preview: { type: "ui", label: "Realtime canvas UI" },
-  },
-  {
-    id: "03",
-    title: "Generative Letterforms",
-    date: "09/2023",
-    category: "Creative",
-    stack: "Canvas · Geometry · Tooling",
-    description:
-      "A type experiment where mathematical fields distort characters into expressive, repeatable compositions.",
-    accent: "plum",
-    preview: { type: "typography", label: "Generative type study" },
-  },
-  {
-    id: "04",
-    title: "Shader Notes",
-    date: "2025",
-    category: "Writing",
-    stack: "MDX · Live Demos · Astro",
-    description:
-      "A blog workflow for technical writing with interactive shader embeds and room for code-heavy breakdowns.",
-    accent: "teal",
-    preview: { type: "editorial", label: "Article layout preview" },
-  },
-] as const;
+export const featuredProjects = [] as const;
